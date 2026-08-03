@@ -29,6 +29,9 @@ jobs:
       - name: Build bridge layer
         run: lake build KellerBridge
 
+      - name: Build depth layer
+        run: lake build KellerDepth
+
       - name: Audit axioms
         run: lake build AxiomCheck
 

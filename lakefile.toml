@@ -14,4 +14,7 @@ name = "KellerCerts"
 name = "KellerBridge"
 
 [[lean_lib]]
+name = "KellerDepth"
+
+[[lean_lib]]
 name = "AxiomCheck"
