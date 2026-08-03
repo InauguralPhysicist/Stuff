@@ -103,7 +103,7 @@ theorem fiber_nine :
   have hLneg : ∀ x : ℝ, NfNine x < 0 → Lpoly x (P2Nine x) (P3Nine x) < 0 := by
     intro x hnf
     by_contra hge
-    push_neg at hge
+    rw [not_lt] at hge
     have hchain : (0 : ℝ) ≤ ((41839807913549891391166801 : ℝ)/250000000000000000000000) * Lpoly x (P2Nine x) (P3Nine x) := by
       linarith
     rw [nfBridgeNine x] at hchain
@@ -126,9 +126,9 @@ theorem fiber_nine :
       exact mul_left_cancel₀
         (by norm_num : (8 * ((2543299 : ℝ)/2000000) : ℝ) ≠ 0) hs
     rcases hloc a hcube with ha | ha | ha
-    · subst ha; exact Or.inl ⟨rfl, hb, hc⟩
-    · subst ha; exact Or.inr (Or.inl ⟨rfl, hb, hc⟩)
-    · subst ha; exact Or.inr (Or.inr ⟨rfl, hb, hc⟩)
+    · exact Or.inl ⟨ha, by rw [← ha]; exact hb, by rw [← ha]; exact hc⟩
+    · exact Or.inr (Or.inl ⟨ha, by rw [← ha]; exact hb, by rw [← ha]; exact hc⟩)
+    · exact Or.inr (Or.inr ⟨ha, by rw [← ha]; exact hb, by rw [← ha]; exact hc⟩)
   · have hback : ∀ r : ℝ, CNine r = 0 →
         F1 r (P2Nine r) (P3Nine r) = ((-1643 : ℝ)/50) ∧
         F2 r (P2Nine r) (P3Nine r) = ((3289 : ℝ)/100) ∧
@@ -139,15 +139,14 @@ theorem fiber_nine :
       have e3 := existsNine3 r
       rw [hr, mul_zero] at e1 e2 e3
       exact ⟨by linarith, by linarith, by linarith⟩
-    rintro (⟨ha, hb, hc⟩ | ⟨ha, hb, hc⟩ | ⟨ha, hb, hc⟩) <;>
-      subst ha <;> subst hb <;> subst hc
-    · exact hback r1 hz1
-    · exact hback r2 hz2
-    · exact hback r3 hz3
+    rintro (⟨ha, hb, hc⟩ | ⟨ha, hb, hc⟩ | ⟨ha, hb, hc⟩)
+    · rw [ha, hb, hc]; exact hback r1 hz1
+    · rw [ha, hb, hc]; exact hback r2 hz2
+    · rw [ha, hb, hc]; exact hback r3 hz3
 
 /-! ### The point yThree = (-1249/10000, 9197/10000, 1267/5000) -/
 noncomputable def P2Three (x : ℝ) : ℝ := ((-1893663543630615147883923 : ℝ)/2842995768106000000000000) * x^2 + ((-31441921950017409 : ℝ)/28429957681060000) * x + ((32953624099086323 : ℝ)/28429957681060000)
-noncomputable def P3Three (x : ℝ) : ℝ := ((54*2**(99/104)*3**(3/26)*5**(11/78)*7**(229/312) : ℝ)/125) * x^2 + ((157042592158666305148612936607631 : ℝ)/284299576810600000000000000000000) * x + ((-196345925406430891694496520043 : ℝ)/56859915362120000000000000000)
+noncomputable def P3Three (x : ℝ) : ℝ := ((28232724680023916527277327364658853079 : ℝ)/5685991536212000000000000000000000000) * x^2 + ((157042592158666305148612936607631 : ℝ)/284299576810600000000000000000000) * x + ((-196345925406430891694496520043 : ℝ)/56859915362120000000000000000)
 noncomputable def H1Three (x : ℝ) : ℝ := ((18292514897011693883588070349419767404933744558158304482709522310151232506270775288080614279031 : ℝ)/26131530351915877203426738116324838518101356559878400000000000000000000000000000000000000000000) * x^8 + ((4289534774791015823433477663759737861777104126566990681792218744937676423922069483698269159 : ℝ)/1306576517595793860171336905816241925905067827993920000000000000000000000000000000000000000) * x^7 + ((331193248022127906555938905507779197659768270954470483931058439771682718464923085307511 : ℝ)/261315303519158772034267381163248385181013565598784000000000000000000000000000000000000) * x^6 + ((-15639762412174255135977140347831641621513932951776089398300355160905255722800503 : ℝ)/1306576517595793860171336905816241925905067827993920000000000000000000000000000) * x^5 + ((-26695071472441652496217595497565529927203716437192876305426934033055293446566107 : ℝ)/2613153035191587720342673811632483851810135655987840000000000000000000000000000) * x^4 + ((375896154730789233073065061299229011034075940250782550804750977660972096967 : ℝ)/26131530351915877203426738116324838518101356559878400000000000000000000000) * x^3 + ((322799568189669474356861341063359838350534905281955621095832708160562569 : ℝ)/26131530351915877203426738116324838518101356559878400000000000000000000) * x^2 + ((-2281606387923925550444330763866915970708229618745301123 : ℝ)/459577369848226470862416317147618700320000000000000000) * x + ((-130518088038501795758474952708630777763 : ℝ)/32330499749874499707308944000000000000)
 noncomputable def H2Three (x : ℝ) : ℝ := ((-28979564440376475756857575788834695974411956004940988930326063251498791 : ℝ)/9191547396964529417248326342952374006400000000000000000000000000000000) * x^6 + ((-4389765191358341328100261727072836209074494255100680198333337546799 : ℝ)/459577369848226470862416317147618700320000000000000000000000000000) * x^5 + ((214370624616200458215343000305799900331260417364047000092026169 : ℝ)/45957736984822647086241631714761870032000000000000000000000000) * x^4 + ((11403164362745392672854252162271873412821244680020952269 : ℝ)/459577369848226470862416317147618700320000000000000000) * x^3 + ((-1295824766392707167251895051554074179168982415274300391 : ℝ)/919154739696452941724832634295237400640000000000000000) * x^2 + ((-396574842675628509577826789112992333289 : ℝ)/32330499749874499707308944000000000000) * x + ((-5372211538923 : ℝ)/11371983072424)
 noncomputable def H3Three (x : ℝ) : ℝ := ((2693797604825644357893 : ℝ)/1137198307242400000000) * x^2 + ((-27591 : ℝ)/40000) * x + ((1 : ℝ)/2)
@@ -200,7 +199,7 @@ theorem fiber_three :
   have hLpos : ∀ x : ℝ, 0 < NfThree x → 0 < Lpoly x (P2Three x) (P3Three x) := by
     intro x hnf
     by_contra hge
-    push_neg at hge
+    rw [not_lt] at hge
     have hchain : ((4083051617486855813035427830675756018453336962481 : ℝ)/61035156250000000000000000000000000000000000) * Lpoly x (P2Three x) (P3Three x) ≤ (0 : ℝ) := by
       linarith
     rw [nfBridgeThree x] at hchain
@@ -223,9 +222,9 @@ theorem fiber_three :
       exact mul_left_cancel₀
         (by norm_num : (8 * ((1421497884053 : ℝ)/250000000000) : ℝ) ≠ 0) hs
     rcases hloc a hcube with ha | ha | ha
-    · subst ha; exact Or.inl ⟨rfl, hb, hc⟩
-    · subst ha; exact Or.inr (Or.inl ⟨rfl, hb, hc⟩)
-    · subst ha; exact Or.inr (Or.inr ⟨rfl, hb, hc⟩)
+    · exact Or.inl ⟨ha, by rw [← ha]; exact hb, by rw [← ha]; exact hc⟩
+    · exact Or.inr (Or.inl ⟨ha, by rw [← ha]; exact hb, by rw [← ha]; exact hc⟩)
+    · exact Or.inr (Or.inr ⟨ha, by rw [← ha]; exact hb, by rw [← ha]; exact hc⟩)
   · have hback : ∀ r : ℝ, CThree r = 0 →
         F1 r (P2Three r) (P3Three r) = ((-1249 : ℝ)/10000) ∧
         F2 r (P2Three r) (P3Three r) = ((9197 : ℝ)/10000) ∧
@@ -236,11 +235,10 @@ theorem fiber_three :
       have e3 := existsThree3 r
       rw [hr, mul_zero] at e1 e2 e3
       exact ⟨by linarith, by linarith, by linarith⟩
-    rintro (⟨ha, hb, hc⟩ | ⟨ha, hb, hc⟩ | ⟨ha, hb, hc⟩) <;>
-      subst ha <;> subst hb <;> subst hc
-    · exact hback r1 hz1
-    · exact hback r2 hz2
-    · exact hback r3 hz3
+    rintro (⟨ha, hb, hc⟩ | ⟨ha, hb, hc⟩ | ⟨ha, hb, hc⟩)
+    · rw [ha, hb, hc]; exact hback r1 hz1
+    · rw [ha, hb, hc]; exact hback r2 hz2
+    · rw [ha, hb, hc]; exact hback r3 hz3
 
 /-! ### The point yFive = (-29083/10000, -7379/5000, 6249/10000) -/
 noncomputable def P2Five (x : ℝ) : ℝ := ((87662390975896884428442273 : ℝ)/5745446022096400000000000) * x^2 + ((58909848616145091 : ℝ)/28727230110482000) * x + ((-1112923541264030017 : ℝ)/143636150552410000)
@@ -297,7 +295,7 @@ theorem fiber_five :
   have hLneg : ∀ x : ℝ, NfFive x < 0 → Lpoly x (P2Five x) (P3Five x) < 0 := by
     intro x hnf
     by_contra hge
-    push_neg at hge
+    rw [not_lt] at hge
     have hchain : (0 : ℝ) ≤ ((42565234474558405526185446260763508954986046638022561 : ℝ)/15625000000000000000000000000000000000000000000) * Lpoly x (P2Five x) (P3Five x) := by
       linarith
     rw [nfBridgeFive x] at hchain
@@ -306,7 +304,7 @@ theorem fiber_five :
   have hLpos : ∀ x : ℝ, 0 < NfFive x → 0 < Lpoly x (P2Five x) (P3Five x) := by
     intro x hnf
     by_contra hge
-    push_neg at hge
+    rw [not_lt] at hge
     have hchain : ((42565234474558405526185446260763508954986046638022561 : ℝ)/15625000000000000000000000000000000000000000000) * Lpoly x (P2Five x) (P3Five x) ≤ (0 : ℝ) := by
       linarith
     rw [nfBridgeFive x] at hchain
@@ -329,9 +327,9 @@ theorem fiber_five :
       exact mul_left_cancel₀
         (by norm_num : (8 * ((-14363615055241 : ℝ)/1000000000000) : ℝ) ≠ 0) hs
     rcases hloc a hcube with ha | ha | ha
-    · subst ha; exact Or.inl ⟨rfl, hb, hc⟩
-    · subst ha; exact Or.inr (Or.inl ⟨rfl, hb, hc⟩)
-    · subst ha; exact Or.inr (Or.inr ⟨rfl, hb, hc⟩)
+    · exact Or.inl ⟨ha, by rw [← ha]; exact hb, by rw [← ha]; exact hc⟩
+    · exact Or.inr (Or.inl ⟨ha, by rw [← ha]; exact hb, by rw [← ha]; exact hc⟩)
+    · exact Or.inr (Or.inr ⟨ha, by rw [← ha]; exact hb, by rw [← ha]; exact hc⟩)
   · have hback : ∀ r : ℝ, CFive r = 0 →
         F1 r (P2Five r) (P3Five r) = ((-29083 : ℝ)/10000) ∧
         F2 r (P2Five r) (P3Five r) = ((-7379 : ℝ)/5000) ∧
@@ -342,11 +340,10 @@ theorem fiber_five :
       have e3 := existsFive3 r
       rw [hr, mul_zero] at e1 e2 e3
       exact ⟨by linarith, by linarith, by linarith⟩
-    rintro (⟨ha, hb, hc⟩ | ⟨ha, hb, hc⟩ | ⟨ha, hb, hc⟩) <;>
-      subst ha <;> subst hb <;> subst hc
-    · exact hback r1 hz1
-    · exact hback r2 hz2
-    · exact hback r3 hz3
+    rintro (⟨ha, hb, hc⟩ | ⟨ha, hb, hc⟩ | ⟨ha, hb, hc⟩)
+    · rw [ha, hb, hc]; exact hback r1 hz1
+    · rw [ha, hb, hc]; exact hback r2 hz2
+    · rw [ha, hb, hc]; exact hback r3 hz3
 
 /-! ### The point ySeven = (-320873/10000, 30951/1000, -1611/10000) -/
 noncomputable def P2Seven (x : ℝ) : ℝ := ((392722139673500322632590530117 : ℝ)/60782214297418000000000000) * x^2 + ((-252191529965837591871 : ℝ)/303911071487090000) * x + ((350173681905876777 : ℝ)/60782214297418000)
@@ -403,7 +400,7 @@ theorem fiber_seven :
   have hLneg : ∀ x : ℝ, NfSeven x < 0 → Lpoly x (P2Seven x) (P3Seven x) < 0 := by
     intro x hnf
     by_contra hge
-    push_neg at hge
+    rw [not_lt] at hge
     have hchain : (0 : ℝ) ≤ ((853072784463664346172007201503769493517339604534955761 : ℝ)/15625000000000000000000000000000000000000000000) * Lpoly x (P2Seven x) (P3Seven x) := by
       linarith
     rw [nfBridgeSeven x] at hchain
@@ -412,7 +409,7 @@ theorem fiber_seven :
   have hLpos : ∀ x : ℝ, 0 < NfSeven x → 0 < Lpoly x (P2Seven x) (P3Seven x) := by
     intro x hnf
     by_contra hge
-    push_neg at hge
+    rw [not_lt] at hge
     have hchain : ((853072784463664346172007201503769493517339604534955761 : ℝ)/15625000000000000000000000000000000000000000000) * Lpoly x (P2Seven x) (P3Seven x) ≤ (0 : ℝ) := by
       linarith
     rw [nfBridgeSeven x] at hchain
@@ -435,9 +432,9 @@ theorem fiber_seven :
       exact mul_left_cancel₀
         (by norm_num : (8 * ((30391107148709 : ℝ)/1000000000000) : ℝ) ≠ 0) hs
     rcases hloc a hcube with ha | ha | ha
-    · subst ha; exact Or.inl ⟨rfl, hb, hc⟩
-    · subst ha; exact Or.inr (Or.inl ⟨rfl, hb, hc⟩)
-    · subst ha; exact Or.inr (Or.inr ⟨rfl, hb, hc⟩)
+    · exact Or.inl ⟨ha, by rw [← ha]; exact hb, by rw [← ha]; exact hc⟩
+    · exact Or.inr (Or.inl ⟨ha, by rw [← ha]; exact hb, by rw [← ha]; exact hc⟩)
+    · exact Or.inr (Or.inr ⟨ha, by rw [← ha]; exact hb, by rw [← ha]; exact hc⟩)
   · have hback : ∀ r : ℝ, CSeven r = 0 →
         F1 r (P2Seven r) (P3Seven r) = ((-320873 : ℝ)/10000) ∧
         F2 r (P2Seven r) (P3Seven r) = ((30951 : ℝ)/1000) ∧
@@ -448,10 +445,9 @@ theorem fiber_seven :
       have e3 := existsSeven3 r
       rw [hr, mul_zero] at e1 e2 e3
       exact ⟨by linarith, by linarith, by linarith⟩
-    rintro (⟨ha, hb, hc⟩ | ⟨ha, hb, hc⟩ | ⟨ha, hb, hc⟩) <;>
-      subst ha <;> subst hb <;> subst hc
-    · exact hback r1 hz1
-    · exact hback r2 hz2
-    · exact hback r3 hz3
+    rintro (⟨ha, hb, hc⟩ | ⟨ha, hb, hc⟩ | ⟨ha, hb, hc⟩)
+    · rw [ha, hb, hc]; exact hback r1 hz1
+    · rw [ha, hb, hc]; exact hback r2 hz2
+    · rw [ha, hb, hc]; exact hback r3 hz3
 
 end KellerBridge
