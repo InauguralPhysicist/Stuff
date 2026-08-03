@@ -29,6 +29,7 @@ The full write-up is [`keller_quantization_report.md`](keller_quantization_repor
 | `KellerCerts.lean` | Lean 4 certificates for the Part IV level sets (n₂ = 3, 5, 7, 9) |
 | `AxiomCheck.lean` | `#print axioms` audit of every certificate |
 | `friedrichs_levels.html` | Figure: Friedrichs spectrum of the transformed oscillator (Part III) |
+| `source-note/` | The verified note and its companion scripts, archived with matching SHA-256 (see its README) |
 | `lakefile.toml`, `lean-toolchain` | Lake build config, pinned to Lean 4 / mathlib v4.32.0 |
 
 ## Lean certificates
@@ -75,5 +76,9 @@ used `--dirs 400000` over ten seeds, the no-go Monte Carlo 4×10⁷ samples).
 ## Provenance
 
 The source note is identified in the report header by SHA-256
-(`kellermapoperators.md`, `fiber_and_escape.py`); the report's revision note
-records the full adversarial-review history (five external rounds).
+(`kellermapoperators.md`, `fiber_and_escape.py`). Both files — plus the
+note's other companion scripts and the earlier-draft artifacts its Appendix A
+dissects — are archived unmodified in [`source-note/`](source-note/), with
+digests verified against the report's pins (see that directory's README).
+The report's revision note records the full adversarial-review history
+(five external rounds).
