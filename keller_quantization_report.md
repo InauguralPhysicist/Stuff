@@ -1,0 +1,337 @@
+# The Alpöge Keller Map as a Quantum System: Verification and New Results
+
+**Subject.** Independent verification of the note *"A Non-Regular Heisenberg System from the Alpöge Keller Map"* (`kellermapoperators.md`, SHA-256 `f2c9aa14…327a6b612`; companion script `fiber_and_escape.py`, `09303167…daa453f91`) and the resolution of three of its four open questions. All symbolic claims were recomputed exactly over ℚ (SymPy 1.14.0); all numerical claims were recomputed with independent code (NumPy 2.4.4, SciPy 1.17.1) and fresh seeds. Companion code: `keller_quantization.py`; its eight subcommands reproduce every *number* in this report; a few auxiliary arguments (the RK4-in-kind §7 check, the mpmath 50-digit exchange corroboration of §I.4) are described in the text with enough detail to re-derive but are not shipped as subcommands.
+
+**Revision note.** This is revision 9: revision 8 plus a machine-checked Lean layer for the Part IV level-set certificates (IV.2b), not yet externally reviewed. Revision 8 incorporated the fifth adversarial review round, which audited the previously unreviewed §III.4 and re-ran the full artifact (everything reproduced; the no-go overlap confirmed to five decimals by an independent variance-reduced 4×10⁸-sample Monte Carlo). Its findings: one logic overclaim in §III.4's prose (the theorem forbids the transported pair, not individual free levels — corrected, with the review's construction of an extension realizing level 3 adopted); a justification gap in IV.2's even-values claim (closed with the review's curve-injectivity Gröbner proof, now shipped); an unreliable quadrature error claim (restated honestly); plus docstring drift, a benign glue-bookkeeping note, a loose monotonicity parenthetical, and rounding inconsistencies (all fixed). Revision 7 added §III.4 (the ladder no-go theorem and the computed extension family). Revision 6 incorporated the fourth adversarial review round (which audited the previously unreviewed Part IV). That round found one false sentence in IV.2 (corrected, with the reviewer's exact counterexample adopted), upgraded three evidence-based claims to exact theorems using constructions the review supplied (the F²–F³ separation certificate, the full set of n₂ level-set certificates, and the symbolic A₂ criterion), caught a mislabeled "exact" certificate (now genuinely exact), and flagged self-description drift and dead code (regenerated and removed). Prior history: Revision 2 followed an adversarial external review of revision 1; revision 3 followed a second round that caught a fixed-seed census artifact and upgraded the exchange rule to a lemma; revision 4 follows a third round (full artifact re-run including the 4M census and spectrum, fresh symbolic re-derivation, three independent fate referees — the decisive one agreeing on all 1,200 classifications, and the exchange ratio (x_a−x_b)/K constant to six figures through crossings) whose findings were presentation-level, with one exception that turned out to be substantive: replacing the completion pass's 7-point sign sampling with an exact univariate root certificate exposed ~20 grid edges that genuinely cross the wall twice, correcting the mixed band of the spectrum by up to 0.05. All fixes itemized in the response section. The review confirmed all headline mathematics, and found: a reproducibility failure in the trajectory-fate table, a small-sample figure quoted as a population figure, a missing injectivity guard in the mesh matcher, two places where the code asserted what it should compute, and one false sentence in the proof of Theorem 1. All are corrected here — and chasing the fate-table discrepancy to ground uncovered a genuinely new phenomenon (the branch-exchange rule of §I.4b), which changes the fate statistics well beyond the one-trajectory drift the review flagged. Details in the "Response to review" section at the end.
+
+**Summary of outcomes.**
+
+- **Verification (Part I).** Every checkable claim in the note is correct except one sentence: §10's characterization of which directions reach the metric boundary ("exactly those with v₁ < 0") is wrong, though the ≈45% figure beside it is right. The note's Appendix-A warnings about numerical failure modes were independently reproduced, unprompted, by first-pass instruments in this work — twice.
+- **Open Question 1, settled (Part II).** P′₁ on C_c^∞(ℝ³) has deficiency indices (∞, ∞): not essentially self-adjoint, with an infinite family of self-adjoint extensions. The metric boundary is not thin; it forces boundary conditions.
+- **Open Question 2, settled (Part II).** {L = 0} is not smooth. Its singular locus is exactly the empty-fiber curve, along which the wall has a cuspidal edge (transverse A₂). As a byproduct the real fiber count n(y) is now determined at every point of ℝ³, including on the wall.
+- **Open Question 3, answered (Part III).** The Friedrichs extension of −Δ_g + |F|² does **not** contain the transported oscillator ladder; its ground state is ≈3.64 (vs 3 free), and it carries a new family of boundary-localized doublets at ≈5.41, 7.25, 9.03 living in the escape channels. Moreover this is forced (III.4, **ladder no-go theorem**): the transported eigenfunctions are pairwise non-orthogonal in the multiplicity-weighted metric (⟨Ch₀₀₀, Ch₀₀₂⟩ = −0.212 ≠ 0 with energies 3 ≠ 7), so *no* self-adjoint extension contains the full ladder — every quantization deforms it. Three natural extensions were computed (Dirichlet / Neumann / reglued): three visibly different spectra, none containing 3, 5, 7.
+- **Open Question 4, separation half resolved (Part IV; exact end to end as of revision 6).** The tower F, F∘F, F∘F∘F consists of pairwise inequivalent quantum systems, separated exactly by the proposed invariant: spec(C₂*C₂) = {1,3,5,7,9} with exact rational certificates for every value, and ess-range(n₃) exactly certified to exceed 9. Completeness — and the note's original family — remain open.
+
+---
+
+## 0. The objects
+
+Alpöge's Keller map F : ℝ³ → ℝ³ (July 2026), with det DF ≡ −2:
+
+    F₁ = (1 + x₁x₂)³x₃ + x₂²(1 + x₁x₂)(4 + 3x₁x₂)
+    F₂ = x₂ + 3x₁(1 + x₁x₂)²x₃ + 3x₁x₂²(4 + 3x₁x₂)
+    F₃ = 2x₁ − 3x₁²x₂ − x₁³x₃
+
+From it: A = (DFᵀ)⁻¹ = −adj(DF)ᵀ/2 (polynomial, degree ≤ 11); the operators Q′ᵢ = Fᵢ(q)·, P′ᵢ = Σₖ Aᵢₖ(q)pₖ = −iXᵢ (Xᵢ = row i of A); the composition operator (Cψ)(x) = √2·ψ(F(x)); the pullback metric g = DFᵀDF with det g = 4; and the two governing polynomials
+
+    L(y) = 27y₁²y₃² − 18y₁y₂y₃ + 16y₁ + y₂³y₃ − y₂²        (the wall / non-properness locus)
+    K(y) = 27y₁y₃² − 9y₂y₃ + 8                              (a chart singularity, not a wall)
+
+with B(y) = 4 − 3y₂y₃. Every real preimage of y has x₁ satisfying the **cubic identity** L(y)x₁³ + Bx₁ − 2y₃ = 0, which lies in ⟨F − y⟩ as an exact polynomial identity, and the discriminant factors as Δ = −4K²L.
+
+---
+
+## Part I — Verification of the note
+
+### I.1 Exact symbolic claims: all confirmed
+
+Recomputed from the definition of F alone, exactly over ℚ:
+
+| claim | result |
+|---|---|
+| det DF ≡ −2; component degrees (7, 6, 4) | ✓ |
+| the three preimages of (−1/4, 0, 0) are (−1, 3/2, 13/2), (0, 0, −1/4), (1, −3/2, 13/2) | ✓ |
+| A·DFᵀ = I; max coefficient degree of A is 11 | ✓ |
+| Piola: Σₖ∂ₖAᵢₖ = 0 (all three rows) — so each P′ᵢ is symmetric with no ordering ambiguity | ✓ exactly |
+| all 9 coefficients Σₖ(Aᵢₖ∂ₖAⱼₗ − Aⱼₖ∂ₖAᵢₗ) vanish — so [P′ᵢ, P′ⱼ] = 0 with no ℏ² terms | ✓ exactly |
+| lex Gröbner basis of ⟨F − y⟩ (x₃>x₂>x₁) has shape-lemma form (x₂, x₃ degree 1 over x₁) | ✓ (symbolically over ℚ(y) and at generic points) |
+| univariate factor = the displayed cubic; cubic vanishes identically under y ↦ F(x) | ✓ |
+| Δ = −4K²L; Corollary 2: B³ + 27y₃²L = K² | ✓ |
+| empty fibers: ⟨F−(4/27, 4/3, 1)⟩ = ⟨F−(1/27, 2/3, 2)⟩ = ⟨1⟩; L = B = 0 on the curve | ✓ |
+| AᵀA = g⁻¹; det g = 4; near 0, L(tv) = 16v₁t − v₂²t² + O(t³) | ✓ |
+
+The logical superstructure was audited and is sound: the parity argument (n odd off the wall, so n = 2 impossible); C*C = M_{n(y)} with spec {1, 3}; the §6 completeness obstruction — here noting that its covering-map lemma needs no properness (a local homeomorphism onto ℝ³ with constant finite fiber count is automatically a covering: over a common target neighborhood each of the n disjoint slice neighborhoods contributes exactly one preimage, and constancy forbids more); the §8 multiplicity argument (non-constancy of the multiplicity function is the unitary invariant that kills regularity — three constant copies would be harmless); and §10's local-isometry/Hopf–Rinow equivalence. A small unstated fact that makes §6's sign analysis uniform: Corollary 2 forces B = K^{2/3} ≥ 0 at every wall point.
+
+*Notation note.* The Corollary 1 curve "(4/27s², 4/3s, s)" parses correctly only as y(s) = (4/(27s²), 4/(3s), s); the reading ((4/27)s², (4/3)s, s) gives L ≢ 0. Both quoted sample points fit the first reading.
+
+### I.2 Numerical claims: all replicated
+
+- **Fiber sampling.** 4000 uniform points in [−3,3]³, fresh seed: 3300 / 700 (note: 3305 / 695). ✓
+- **§6 worked example, to the digit.** x₀ = (0.2, 0.1, −0.3): L(F(x₀)) = −4.2421 ✓; walls at t = 0.2772 and −3.7188 ✓; persistent limit 2y₃/B = 0.19167 ✓; fiber drops 3 → 1 across the wall with the dying pair at ≈ ±35.3 just inside (at δ = 2×10⁻⁴ before the wall; the pair scales as δ^{−1/2}, e.g. ≈ ±15.7 at δ = 10⁻³) ✓.
+- **Blowup rate.** Fitted exponent of the escaping root: −0.4983 (claimed −1/2). ✓
+- **§7 escape-time table.** The note's five initial conditions are unspecified, so the table was checked in kind, not line by line: independent fixed-step RK4 (h = 2×10⁻⁴) from the two dying preimages of F(x₀) reproduces the forward pattern (blowup 0.2774 vs predicted 0.2772, 4 digits) and the backward lateness the note reports.
+- **§10 continuation.** For v ∝ (−1, 0.3, 0.2): first positive root of L(tv) = 2.30774. ✓ 5 digits.
+- **§10 distance statistics.** Fresh seed, 4000 directions: min 1.0732 (exact match), q10 1.148 vs 1.147, median 1.684 vs 1.670, q90 6.06 vs 5.78, max ~1073 vs 1018 (heavy upper tail, seed-sensitive). ✓
+- **Branch fates at walls** (`boundary` subcommand): 40/40 sampled v₁<0-with-wall directions: origin lift dies at the first wall ✓; 25/25 sampled v₁>0 directions whose ray nevertheless crosses the wall: origin lift survives, the incoming pair arriving from infinity ✓; backward wall of the §6 fiber: the x₀ branch and the (−1.06…) branch die, the (0.86…) branch survives with |x| ≈ 108 ✓ (consistent with the note, which claims forward survival only for x₀).
+
+### I.3 The one error found (§10)
+
+> directions reaching the boundary ≈ 45% (exactly those with v₁ < 0)
+
+is internally inconsistent — {v₁ < 0} is exactly half the sphere — and the parenthetical is what fails. Along a ray, L(tv) = (27v₁²v₃² + v₂³v₃)t⁴ − 18v₁v₂v₃t³ − v₂²t² + 16v₁t, and the leading coefficient **can be negative**. A ten-seed census of 400,000 directions each (4M total; criterion validated against exact-arithmetic real-root counting, 0 disagreements in 3,500 cumulative spot checks) gives: **4.67 ± 0.01%** of the sphere has v₁ < 0 with no positive root of L(tv). *Correction history:* revision 2 published 4.59 ± 0.03% and claimed confirmation on "a second independent draw" — that second draw reused the same hard-coded seed, so it was the identical sample twice, and the seed happened to sit 2.3σ low; the second review caught this, and its own estimate (~4.70%) is consistent with the 4M figure within joint uncertainty. Those wall-free rays stay on the three-sheeted side forever; their lifts are complete — and this needs no numerics: off {L = 0} the restriction of F is a local homeomorphism with constant finite fiber count, hence a covering (the same no-properness lemma as in the §6 audit), and coverings lift whole paths. Numerical corroboration anyway: 6/6 sampled wall-free lifts continue cleanly to t = 50 with polynomial growth. The correct statement:
+
+> the origin lift reaches the metric boundary exactly along directions with v₁ < 0 whose ray meets {L = 0} — i.e. L(tv) has a positive real root — about 45.3% of the sphere (per-seed scatter ≈ 0.1 points: observed 45.20–45.45% across seeds here and in review re-runs; the round-2 response quoted 45.4–45.5% from earlier draws).
+
+This matches the note's own measured ≈45%; the number was right, its explanation wrong. The quoted distance statistics are unaffected (min 1.0732 at the note's 4,000-direction sample size; the 400k census pushes the observed minimum to 1.0721 and the heavy upper tail into the 10⁵ range). The note's near-origin sign analysis remains correct as a local statement; it just does not globalize.
+
+### I.4 Methodological replication of Appendix A — and a sharpening of A.3
+
+Three first-pass instruments in this verification failed in exactly the ways the note's errata catalog: an adaptive-step integrator (RK45, rtol 10⁻¹⁰) crept toward walls without ever arriving (A.2's artifact — turning 56 short integrations into a 10-minute timeout); fixed-step RK4 run backward through the §6 wall silently overshot the singularity, hopped sheets, and reported a dying branch as surviving (A.3's artifact in ODE form); and in Part III, the float64 evaluation of F at |x| ~ 10²–10³ (absolute error ~10⁻¹⁶|x|⁷, A.3's cancellation) silently fabricated thousands of spurious boundary facets in a naive mesh, cured by conditioning-aware residual thresholds and a bijectivity-completion pass.
+
+**I.4b The exchange rule at K-crossings (new).** Chasing a review-flagged discrepancy in the trajectory-fate table exposed a fourth failure mode, sharper than anything in Appendix A, together with its exact mechanism — now a lemma rather than an observation (the second review supplied the same proof independently).
+
+**Lemma (exchange).** *Along a ray y(s) = y₀ + s·(±e₁) with L(s) < 0 near a simple zero s_K of K(s) (K is linear along the ray), the two x₁-branches of the fiber cubic that collide at s_K are separately analytic in s and satisfy x_a(s) − x_b(s) = K(s)·h(s) with h analytic and nonvanishing. In particular they cross transversally and exchange order.*
+
+*Proof.* The cubic Lx³ + Bx + q has no quadratic term, so the three roots sum to zero and x_a + x_b = −x_c is analytic near s_K (x_c stays simple there). The discriminant identity Δ = −4K²L gives ∏_{i<j}(x_i − x_j)² = −4K²/L³, and the two factors involving x_c extend analytically and nonvanishingly across s_K, so (x_a − x_b)² = K²·g with g analytic, g(s_K) > 0. An analytic square with a double zero has an analytic square root: x_a − x_b = K·√g. With the analytic sum and difference, x_{a,b} = (−x_c ± K√g)/2 are separately analytic, and their difference changes sign at s_K. ∎
+
+The colliding branches remain far apart as 3D points (separations of order 10²–10⁴ in the cases examined); the crossing is purely an x₁-projection collision. Corroborated to 50 digits with mpmath on an explicit trajectory. Consequences: (i) nearest-value root tracking, which can never exchange, silently hops sheets at *every* K-crossing — the note's A.3 warning ("tracking x₁ alone across it is unreliable") is not just a caution about conditioning but a theorem about a deterministic, always-wrong step; (ii) the correct 1D tracker is nearest-value matching *plus a deterministic swap of the colliding pair at the K-zero* — no 3D lifting needed at all; (iii) 3D Newton path-following handles the exchange automatically but is fragile for fast trajectories (|X₁| ~ 10²⁺, path lengths ~10³ Euclidean units for rays whose walls sit at s ~ 10²), and over-reports death when continuation breaks. In head-to-head adjudication on all classifier disagreements a guarded continuation could decide (12 cases), the exchange-aware algebraic tracker was right 12–0. The round-5 review distilled the structure further into a grid-free *rank-conservation* form worth recording: at the K-zero the colliding pair takes the double-root value x_d = 3y₃/B with third root −2x_d (roots sum to zero), so the colliding pair is the top two ranks iff x_d > 0; and at a wall approached from L < 0 the persistent root 2y₃/B is always the *middle* rank, since the dying pair diverges to ±∞ with opposite signs. Fate is then pure rank arithmetic — initial rank, at most one deterministic swap, compare with the middle rank at the wall — with no grids or tolerances at all; this classifier agreed with the shipped one on 600/600 classifications, a third independent confirmation of the fate table and a structural corroboration of the exchange rule.
+
+---
+
+## Part II — Two open questions settled
+
+### II.1 Theorem 1 (Open Question 1). Deficiency indices of P′₁ are (∞, ∞)
+
+**Statement.** On C_c^∞(ℝ³), P′₁ = −iX₁ is symmetric with n₊ = n₋ = ∞. It is not essentially self-adjoint, and admits an infinite family of self-adjoint extensions parametrized by unitaries N₊ → N₋. The metric boundary of §10 is not thin — it forces a choice of boundary condition. The same holds for P′₂, P′₃, and for any direction v once per-direction escaping anchors are supplied (the clock below exists for every v). This proves the inference §8 flagged as "expected but unproven," with a refinement: the indices are *equal*, so the failure is massive non-uniqueness of quantization rather than non-existence.
+
+**Proof.** (1) *A global clock.* X₁ is smooth, nowhere zero (rows of the invertible A), divergence-free (Piola), and F-related to ∂/∂y₁: X₁F₁ ≡ 1, X₁F₂ = X₁F₃ ≡ 0. So F₁ increases at unit rate along every trajectory, and each maximal trajectory crosses the smooth transversal Σ_c = {F₁ = c} **at most once** (∇F₁ is a row of DF, nonzero; X₁·∇F₁ = 1) — a trajectory whose F₁-range misses c never crosses, which is harmless: the construction lives entirely on the tube of trajectories that do. On that tube the flow map (σ, s) ↦ Φ_s(σ) is a diffeomorphism from ⋃_σ {σ}×(α(σ), β(σ)) onto its image, carrying ν ⊗ ds to Lebesgue measure (ν = flux measure ⟨X₁, n⟩dσ; divergence-freeness), and deficiency vectors supported on the tube suffice for the dimension count.
+
+(2) *Deficiency solutions in flow coordinates.* N₊ = ker((P′₁)* − i) is the space of distributional L² solutions of X₁ψ = −ψ, i.e. ψ(Φ_s(σ)) = e^{−s}χ(σ); N₋ likewise with e^{+s}. By (1), ‖ψ‖² = ∫|χ|² (∫_α^β e^{∓2s} ds) dν, finite for the N₊ sign iff α(σ) > −∞ on supp χ (finite backward escape) and for N₋ iff β(σ) < ∞ (forward); the weight decays automatically at any complete end. Distributional validity on all of ℝ³ is checked on truncated tubes: the s = −S term is ≤ e^{−S}‖χ‖_{L¹(ν)}‖φ‖_∞ → 0, the escaping end exits the test function's compact support (a maximal trajectory leaves every compact set, locally uniformly in σ since the flow's maximal domain is open), and the lateral boundary is killed by χ ∈ C_c^∞(Σ). Hence n_± = ∞ as soon as the corresponding escaping set has positive ν-measure.
+
+(3) *Positive measure, from explicit anchors.* Forward anchor (0.86452, −1.6728, 7.87655), backward anchor (0.2, 0.1, −0.3) (Part I.2). Each has an open neighborhood of the same fate: along the e₁-flow, y₂, y₃, B, q = −2y₃ are constants of motion and only L varies (quadratically in t); on a short window before the wall avoiding the at-most-one zero of the (linear in t) K, the three cubic branches are real, simple, non-crossing, so being on a diverging branch at the window's start is open and forces divergence at the wall. Open ⟹ positive Lebesgue ⟹ positive flux measure (escaping is trajectory-wise; Lebesgue = ν ⊗ ds). ∎
+
+**Numerics.** Fates of the P′₁ trajectory through 300 uniform points of [−2,2]³, both time directions, decided by the exchange-aware algebraic classifier of §I.4b (no ODE integration; at most two walls per ray since L is quadratic along it, so the check is exhaustive): forward-complete/backward-complete 30.0%, complete/dies 26.0%, dies/complete 17.3%, dies/dies 26.7%. Forward-escaping 44.0%, backward-escaping 52.7%; zero degenerate rays; one exchange-certificate flag in 600 classifications (disclosed by a counter; the swap is applied and the verdict retained); both anchors keep their fates under 20 perturbations of size 10⁻³ (20/20 each, under every classifier tried). The second review's independent rank-based adjudicator agreed on every one of ~570 certifiable classifications, with all 233 examined K-crossings confirming the exchange. All four classes occur with substantial measure — which is all the theorem uses. *History:* revision 1 published 30.3/23.7/3.3/42.7 from a Newton path-following classifier; the review found those numbers irreproducible from the artifact, and the root cause turned out to be worse than staleness — path-following over-reports death for fast trajectories, and value-tracking misses the K-crossing exchange, so the dies/complete class in particular was badly undercounted. The corrected table is the algebraic one above; the qualitative conclusion (both escaping sets have large positive measure) never depended on the splits.
+
+**Remark.** The deficiency data is literally "data on the escape locus": χ lives on bundles of escaping trajectories, i.e. on the boundary the wall attaches. The classical model the note gestured at (d/dx on (0,∞), indices (0,1)) has the wrong shape here — this system is two-sided.
+
+### II.2 Theorem 2 (Open Question 2). Sing {L = 0} = the empty-fiber curve, a cuspidal edge
+
+**Statement.** L is irreducible over ℚ. The singular locus of {L = 0} equals, as a set over ℂ (and over ℝ),
+
+    Sing = V(16y₁ − y₂³y₃, (3y₂y₃ − 4)²) = { y₁ = 4/(27y₃²), y₂ = 4/(3y₃) },
+
+precisely the empty-fiber curve of the note's Corollary 1. Along it the wall has a **cuspidal edge** (transverse A₂).
+
+**Proof/evidence.** The reduced Gröbner basis of J = (L, ∂₁L, ∂₂L, ∂₃L) over ℚ is exactly {16y₁ − y₂³y₃, (3y₂y₃ − 4)²}, whose zero set is the curve. Curve ⊆ Sing: L and ∇L vanish identically under the parametrization (exact substitution). Sing ⊆ curve over ℂ: both generators of the curve ideal pass the Rabinowitsch test 1 ∈ J + (1 − z·f). The squared generator exhibits the non-reduced structure expected at a cusp. Transverse type — **proved symbolically as of revision 6** (criterion supplied by the round-4 review): along the whole curve (parameter t = y₃ ≠ 0), the Hessian of L has rank 1 with 2-dimensional kernel containing the tangent; for the kernel vector k = (1/(3t), 1, 0) transverse to the tangent, D³L(k,k,k) = 6t ≠ 0 while every tangent-slot third derivative vanishes (D³L(τ,τ,τ) = D³L(k,k,τ) = D³L(k,τ,τ) = 0). Rank-1 Hessian plus nonvanishing transverse cubic is the A₂ normal-form criterion, with splitting-lemma corrections entering only at order ≥ 4. Numeric corroboration (formerly the sole evidence): slice crossing counts [2,2,2] vs [0,0,0] on the two sides of the edge, and fitted exponent 1.518 against 3/2 over two decades. Geometrically: the smooth wall is where one pair of sheets degenerates at infinity; the cuspidal edge is where the degeneration deepens (B = K = 0, all three roots at infinity) — and {L = 0, B = 0} = {L = 0, K = 0} = curve exactly (with B = 0, the y₁-quadratic L has discriminant identically zero, double root y₁ = 4/(27y₃²)).
+
+### II.3 Proposition. The fiber count, everywhere
+
+| stratum | n(y) |
+|---|---|
+| L(y) > 0 | 1 |
+| L(y) < 0 | 3 |
+| L(y) = 0, off the curve | **1** |
+| the curve (= Sing {L=0}) | **0** |
+
+New rows: off the curve on the wall, B = K^{2/3} > 0 and the cubic identity degenerates to Bx₁ = 2y₃, pinning x₁ for every preimage. *Uniqueness*: the two shape-lemma relations, cleared of denominators, are exact polynomial identities in ⟨F − y⟩ (verified by substituting y = F(x), the same mechanism as the cubic), with leading coefficients 2K and 8K — so K ≠ 0 determines x₂, x₃ from x₁. *Existence*: approach from {L > 0}; the persistent branch stays bounded (x₁ → 2y₃/B; x₂, x₃ converge in the K ≠ 0 chart) and its limit is a preimage. On the curve the identity reads 0 = −2y₃ with y₃ ≠ 0: empty, always — so the note's Corollary 1 is sharp: **the empty-fiber locus equals the singular curve**, a codimension-2 set. Exact spot checks: single rational preimages (2, 5/6, −7/8) over (2/27, 1, 1) and (2, −1/2, 9/8) over (0, 1, 1); the control fiber over (−1/4, 0, 0) has its three known points. Consequence sharpened: F misses exactly the curve, and C*C = M_n with n ∈ {1,3} a.e. is untouched (the wall is null).
+
+---
+
+## Part III — The Friedrichs spectrum (Open Question 3)
+
+### III.1 Method: mesh the covering, not x-space
+
+The question asks for the spectrum of the Friedrichs extension of H = −Δ_g + |F|² = Σ(P′ᵢ² + Q′ᵢ²), "watching for eigenvalues that refuse to converge to (n₁+n₂+n₃+3/2)ω." In the units of H the free ladder is E = 2(n₁+n₂+n₃) + 3: levels 3, 5, 7, 9 with degeneracies 1, 3, 6, 10.
+
+Discretizing in x-space is hopeless: the metric boundary lies at Euclidean infinity along thin escape channels — exactly where the candidate boundary states live. But by §10 of the note, F is a local isometry, so (ℝ³, g) with this Hamiltonian *is* the flat oscillator −Δ + |y|² on the branched flat manifold M étale over y-space, whose boundary sits at finite y: the two dying sheets over the wall. Friedrichs = Dirichlet there. So the mesh is built on M itself:
+
+- **vertices**: pairs (y grid node, fiber point of F over it) — n(y) per node, computed from the exact cubic plus the shape-lemma chart, Newton-polished, with a 1D-reduction fallback (F₃ is linear in x₃) where the chart degenerates;
+- **edges**: fiber points at adjacent nodes joined iff genuine path-lifting connects them — Euler predictor along the flow fields plus Newton correction on F(x) = y, in substeps;
+- **Dirichlet facets**: lifts that diverge — the metric boundary, discretized;
+- **operator**: the 7-point flat Laplacian per vertex plus |y|², exact for the pulled-back problem since det g is constant and Piola kills all first-order terms.
+
+Four safeguards (all scars from Appendix A and from review): conditioning-aware residual thresholds at large |x| (else float cancellation invents boundary); a completion pass that force-matches leftover lift failures on grid edges *proved* not to cross the wall — a genuine proof, not a sample: along a grid edge only one coordinate varies, so L restricted to it is univariate of degree ≤ 3, and sign constancy is certified by endpoint signs plus absence of real roots in [0,1] of the exactly-interpolated polynomial (revision 4; the earlier 7-point sampler missed ~20 double-crossing edges) — where the covering restricts to a bijection of fibers; an **injectivity guard** in the primary matcher (two lifts claiming one target keep the closer, demote the other to the completion pass — revision 1 lacked this and the review caught a resulting degree-7 vertex at N = 28), backed by an explicit max-degree ≤ 6 assertion; and a **locality guard** on each lift step (Newton correction small relative to the Euler displacement), closing the same silent sheet-hop channel as §I.4b. Mesh health at N = 44 (h = 0.182, box |yᵢ| ≤ 4): 109,112 vertices, 0 hole nodes, 315,227 matched facets, 5,303 Dirichlet facets with zero away from wall crossings (4,794 wall-crossing segments), max vertex degree 6, 99.99% of vertices in one component — as it must be, since M ≅ ℝ³. Calibration on the trivial single sheet reproduces the exact ladder to −0.010 / −0.022 / −0.047 at E = 3 / 5 / 7. Comparison problem: the Dirichlet oscillator on {L > 0} alone (hard wall on the whole wall) has levels 4.77, 6.68, 6.91, … .
+
+### III.2 Results
+
+Two resolutions (N = 36, 44) agree to 0.005–0.07 throughout; the revision-2 guards shifted levels by ≤ 0.007, and the revision-4 exact edge certificate (which converted ~20 wrongly-interior double-crossing edges to boundary) moves the mixed band by up to 0.05 while the ground state and all three doublets move by ≤ 0.004. N = 44, final:
+
+| E | character |
+|---|---|
+| **3.6383** | ground state — main sheet, passing through the transparent (persistent) part of the wall; ⟨\|x\|⟩ ≈ 4.6 |
+| **5.4089, 5.4093** | **boundary doublet** — 90% of weight at \|x\| > 10, against the metric boundary in the channels |
+| 5.5495, 6.0745, 6.344 | main-sheet band (6.34 sits 94% over {L > 0}) |
+| **7.2490, 7.2533** | **boundary doublet** (89% at \|x\| > 10) |
+| 7.474 – 8.628 | mixed main-sheet band |
+| **9.0123, 9.0546** | **boundary doublet** (86% at \|x\| > 10) |
+
+**(a) The transported ladder is absent.** Nothing sits at 3, 5, 7 (FD error is an order of magnitude smaller than the shifts). The transported eigenfunctions Ch_n = √2·h_n∘F solve H*ψ = Eψ in L² but do not vanish at the metric boundary, so they fail the Friedrichs condition. The ground state 3.64 is bracketed strictly between the boundary-free 3 and the hard-wall 4.77 — where a wall transparent on one sheet and absorbing on two must land. Since any extension whose domain admits Ch₀ has 3 in its spectrum, **Friedrichs is spectrally distinct from the transport-compatible extension(s): the (∞,∞) ambiguity of Theorem 1 moves eigenvalues.**
+
+**(b) Boundary-localized states exist.** The doublets at 5.41, 7.25, 9.03 live in the escape channels. Interpretation (heuristic, and flagged as such): the wall passes through y = 0 (L(0) = 0), so the dying sheets present a Dirichlet wall near the bottom of the potential; an exact half-space Dirichlet oscillator has ladder 5, 7, 9 (first odd normal mode 3 + two transverse zero-points, then transverse excitations), and the computed values track that ladder with +0.2–0.4 corrections shrinking upward. The identification is not complete: a true half-space problem has transverse degeneracy 2 at E = 7 *per channel*, and only one 7.25-state per channel is observed — the wall's curvature evidently splits the transverse pair, and the partner presumably sits in the 7.5–8.6 mixed band, unresolved from main-sheet states at this precision. What is solid is what the open question asked for: these are eigenvalues that refuse to converge to the free ladder, carried by states localized at the metric boundary.
+
+**(c) The doubling is the map's ℤ₂ symmetry.** F is equivariant under (x₁,x₂,x₃) → (−x₁,−x₂,x₃) covering (y₁,y₂,y₃) → (y₁,−y₂,−y₃), which preserves L, the wall, and the channels; the doublets are even/odd pairs across symmetry-related channels, and their splitting tightens under refinement (5.3490/5.3980 at N = 36 → 5.4089/5.4093 at N = 44) — a true near-degeneracy, not discretization noise.
+
+### III.3 Caveats
+
+First-pass computation, honest limits: Dirichlet is imposed at the last vertex before a lift dies (O(h) boundary placement, the likely source of the doublets' ~0.06 two-grid drift); the box truncates at |yᵢ| ≤ 4 (safe for E ≲ 10); channels are resolved to L-distance ~h from the wall, so states hiding deeper in the cusp region near the singular curve would need a graded mesh; far-channel vertices at |x| ~ 10²⁻³ are few. The qualitative conclusions — ladder absent, boundary doublets present, ground state strictly shifted — were stable under everything varied. A definitive study would use a boundary-fitted graded mesh with Richardson extrapolation.
+
+### III.4 The transported ladder is unrealizable, and the extension family (new in revision 7)
+
+Part III showed the Friedrichs extension lacks the transported ladder. That turns out to be no defect of Friedrichs: **no self-adjoint extension can hold the ladder**, for a two-line structural reason.
+
+**Theorem (ladder no-go).** No self-adjoint extension of H = −Δ_g + |F|² on C_c^∞(ℝ³) contains both Ch₀₀₀ (energy 3) and Ch₀₀₂ (energy 7) in its domain. In particular, no quantization of this classical system carries the full transported oscillator ladder.
+
+*Proof.* Every self-adjoint extension acts as H* on its domain, and each Ch_n is a smooth, everywhere-classical solution of H*ψ = E_nψ in L² (the identity −Δ_g(h_n∘F) + |F|²(h_n∘F) = E_n·h_n∘F holds pointwise on all of ℝ³ by the chain rule; the metric boundary sits at Euclidean infinity of x-space). If a symmetric operator contained two of them, ⟨HCh_n, Ch_m⟩ = ⟨Ch_n, HCh_m⟩ would force (E_n − E_m)⟨Ch_n, Ch_m⟩ = 0. But the change of variables gives ⟨Ch_n, Ch_m⟩ = ∫ n(y)·h_n h_m dy = 2∫_{L<0} h_n h_m dy — the ordinary orthogonality is broken by exactly the fiber-count weight — and for (n, m) = (000, 002):
+
+    ⟨Ch₀₀₀, Ch₀₀₂⟩ = −0.21218,
+
+computed by adaptive quadrature exploiting the y₃-interval structure of {L < 0} (L is quadratic in y₃, so the inner integral is exact in erf/Gaussian antiderivatives). The integrator's internal error estimate is not reliable here — it emits convergence warnings, as the round-5 review pointed out — so the accuracy statement rests on independent stochastic methods: a 4×10⁷-sample Monte Carlo gives −0.21232 ± 0.00015, and the review's variance-reduced 4×10⁸-sample run gives **−0.2121752 ± 0.0000123**, confirming the quadrature value to five decimals. Nonzero with margin ~10⁴ standard errors; a formal interval-arithmetic enclosure would be routine. Since 3 ≠ 7, no symmetric extension contains both. ∎
+
+The theorem reframes the note's §9: transport places every level (2n+3) in the *point spectrum of the adjoint*, but those eigenfunctions are pairwise non-orthogonal in the multiplicity-weighted geometry of L²(ℝ³, n·dy), and no single quantum Hamiltonian can accommodate them together. Every self-adjoint realization must deform or discard part of the ladder — the deviation Part III computed for Friedrichs is universal, only its detailed shape is extension-dependent.
+
+**The extension family, computed.** The mesh supports the comparison directly (`spectrum --bc {dirichlet, neumann, glue}`): Dirichlet zeroes the dying sheets at the wall (Friedrichs); Neumann frees them (the implicit ghost is removed at each certified single-crossing wall facet); glue identifies the two dying sheets with each other over the same wall point (the ghost is replaced by the partner vertex). Low levels at N = 44:
+
+| extension | low spectrum | character |
+|---|---|---|
+| transported ladder (reference levels) | 3, 5×3, 7×6 | unrealizable *as a family*, by the theorem; individual levels are realizable in suitable extensions |
+| Dirichlet (Friedrichs) | 3.638, 5.409×2, 5.5495, 6.0745, 6.344, 7.249×2, … | ground on the main sheet; boundary doublets |
+| Neumann | 2.717, 2.743×2, 4.610, 4.641, 4.652×2, 5.401, … | ground below the Dirichlet 3.638, as form-domain monotonicity requires — and in fact below the free 3, which monotonicity does not force; prominent wall-hugging surface states (≈95% of weight over {L<0}, ⟨\|x\|⟩ ≈ 13) |
+| reglued | 2.752, 3.782, 4.677, 5.057, 5.337, 5.428, … | flow-through wall; yet another level structure |
+
+Three natural quantizations, three visibly different spectra — and none of the three shows the free levels 3, 5, 7. Care with the logic here (the round-5 review caught an overclaim in the first version of this sentence): the theorem forbids the transported *pair* from coexisting in one extension — it does **not** forbid an individual free level from appearing in some extension's spectrum, and indeed one provably can: Ch₀₀₀ is real, so the boundary form vanishes on its span, the symmetric extension of H by span(Ch₀₀₀) has equal deficiency indices (H commutes with complex conjugation), and any of its self-adjoint extensions has 3 as an eigenvalue. The absence of 3, 5, 7 in Dirichlet, Neumann, and glue is therefore an *empirical* fact about these three natural conditions — none of which is the exotic extension just described — while the theorem's contribution is that no extension whatsoever shows the whole ladder. (The transported states have a derivative kink across the regluing, which is why even the flow-through extension rejects them.) Bookkeeping and caveats: the alternative conditions are applied at the certified single-crossing wall facets carrying a dying pair (4,613 of the wall facets at N = 44); odd-count facets (543), double-crossing edges, hole nodes, and the outer box remain Dirichlet in every mode; N = 36 → 44 drift is ≤ ~0.07 for Neumann and ≤ ~0.06 for glue, so the qualitative comparison is stable though individual levels carry the usual O(h) boundary-placement uncertainty; the level diagram (`friedrichs_levels.html`) still shows the Friedrichs column only.
+
+---
+
+## Part IV — Open Question 4: the tower family (new in revision 5)
+
+The question asks whether the fiber-count function — the joint spectral multiplicity — is a complete invariant separating the family of counterexamples as quantum systems. Alpöge's other family members are not available, but the question does not have to wait for them: **one Keller seed generates a family**, the tower F, F∘F, F∘F∘F, …, since compositions of Keller maps are Keller maps (det D(F^k) ≡ (−2)^k, and each F^k is itself non-injective — a counterexample in its own right). This part formalizes the invariant, computes it along the tower, and proves the separation half of Question 4 within that family. The completeness half remains open.
+
+### IV.1 What the invariant is
+
+For a Keller map G, write S_G for the tuple (Q′, P′) built as in the note. Strict unitary equivalence of tuples forces equality of the position tuple's spectral data: the joint spectral measure class on ℝ³ together with the multiplicity function n_G, up to null sets — this is Hahn–Hellinger multiplicity theory, and it is the precise sense in which n_G is an invariant. But n_G alone is *too fine* as stated: the tame moves — precomposition with a Keller automorphism B (implemented by the composition unitary √|det DB|·ψ∘B) and postcomposition with an invertible affine A (which replaces the generators by the linear symplectic combinations (AQ′, A^{−T}P′), implemented metaplectically) — produce manifestly equivalent physics while pulling n back along coordinate changes of y. So the meaningful invariant is n_G modulo that action; and one consequence is fully robust under every such move: **the essential range of n_G** (the set of values taken on positive-measure sets), equivalently spec(C*C). All separations below use only the essential range.
+
+### IV.2 The tower multiplicity functions
+
+**Lemma (tower recursion).** Writing n_k for the fiber-count function of F^k: n_{k+1}(y) = Σ_{z ∈ F⁻¹(y)} n_k(z) (disjointness of the fibers over distinct preimages). Off a null set n_k is odd — the generic complex fiber of F^k has 3^k simple points and is conjugation-invariant — and M_k := ess-max n_k is nondecreasing in k, since F is an open map, so F({n_k = M_k}) contains an open set of y with n_{k+1}(y) ≥ M_k.
+
+**Computation for k = 2** (`tower` subcommand). On the fiber, L(z) restricts through the shape-lemma chart to N_f(z₁, y)/D_f(y) with D_f = 64K(y)⁴ > 0 — so sibling L-signs are signs of one bivariate polynomial at the three cubic roots, cheap and certifiable. Results:
+
+| n₂ | share of [−3,3]³ | mechanism |
+|---|---|---|
+| 1 | 64.2% | single sheet over single sheet |
+| 3 | 29.8% | two mechanisms: (1,1,1) and (3) — the multiplicity forgets which |
+| 5 | 5.9% | pattern (1,1,3) |
+| 7 | 0.05% | pattern (1,3,3) |
+| 9 | far region only | pattern (3,3,3) |
+
+The value 9 eluded ~600k samples across boxes, seeded strata, and the thin far sheets of {L < 0} (its region lies out near y ≈ (−33, +33, −0.36), where y₁ and y₂ are large with opposite signs), and was finally located by wide log-scaled sampling and then **certified in exact rational arithmetic** — genuinely exact as of revision 6: each cubic root is isolated in a rational interval, bisected until the reduced polynomial N_f mod (fiber cubic) has no root in it, and its sign read at a rational endpoint. (Revision 5 labeled a 50-digit floating-point sign evaluation "exact"; the round-4 review caught the mislabel and independently re-certified the result.) At the rational point y = (−1643/50, 3289/100, −71/200): L(y) < 0 exactly, three real preimages, all three sibling L-signs exactly −1 — so n₂ = 9 there, and since the inequalities are strict, on an open set. The same certifier now covers the other values at rational points supplied by the review: n₂ = 3 at (−1249/10000, 9197/10000, 1267/5000) with signs (+,+,+); n₂ = 5 at (−29083/10000, −7379/5000, 6249/10000) with (+,−,+); n₂ = 7 at (−320873/10000, 30951/1000, −1611/10000) with (+,−,−) — the last replacing what had been a 2-in-4000 sampling claim for the rarest stratum. Hence every level set of n₂ in {1, 3, 5, 7, 9} has positive measure, **exactly end to end**, and
+
+    spec(C₂*C₂) = {1, 3, 5, 7, 9},   ‖C₂‖ = 3 = ‖C‖²,   C₂ = C² .
+
+Three structural remarks. (i) *(Corrected in revision 6 — the round-4 review found revision 5's version false.)* The parity law bends at the second story, but more subtly than first claimed: along the curve c(s), exact computation gives L(F(c(s))) = 16(531441s⁹ + 3752892s⁶ − 725760s³ − 200704)/531441s⁸, which **changes sign**. On the sub-arc where it is positive, F(c(s)) has the single preimage c(s) and n₂ = 0 — F² misses those points, so the non-surjectivity locus grows along the tower (still codimension ≥ 2), now known to be the curve together with only that sub-arc. On the complementary sub-arc L(F(c(s))) < 0, F(c(s)) has two further preimages, and these are off-curve **for every s, not just at spot-checked points** (revision 8, closing a justification gap the round-5 review flagged and whose fix it supplied): on-curve points are exactly the c(u), and the Gröbner computation ⟨num(F(c(u)) − F(c(s))), (u−s)v − 1, su·r − 1⟩ = ⟨1⟩ — shipped in `tower --exact3` — shows F is *injective on the curve* — indeed collision-free even over ℂ (the review's explicit reduced basis {s⁴+s³s′+s²s′²+ss′³+s′⁴, s′⁵(s+s′), s′⁷} has zeros only at the excluded s′ = 0) — so c(s) is the only on-curve preimage of F(c(s)); hence n₂ takes **even values** in {2, 4, 6} on the whole sub-arc: the odd-parity law fails precisely there. (The s = 1/2 instance remains as the concrete certified example: c = (16/27, 8/3, 1/2), L(F(c)) = −949236088/531441, residual quadratic with positive discriminant and trivial gcds against the curve conditions.) Revision 5's blanket "F² misses F(curve)" rested on three probes that all happened to sit in the positive sub-arc. (ii) The walls of F² are {L = 0} ∪ F({L = 0}): multiplicity jumps when y crosses the wall or when a sheet upstairs does. (iii) A regularity bonus from the symmetric-function computation: e₁(y) = Σ L(zᵢ) over the fiber is a *polynomial* in y (the K⁴ denominators cancel exactly), despite F being non-proper.
+
+**k = 3.** Wide sampling of n₃ = Σ n₂ over fibers realizes **{1, 3, 5, 7, 9, 11, 13, 15}** (all odd; theoretical cap 27). The decisive fact for separation — that n₃ exceeds 9 on a positive-measure set — is now **exact** (`tower --exact3`, construction supplied by the round-4 review; revision 5 had rested it on four float samples): with z* the certified n₂ = 9 point and y* = F(z*) ∈ ℚ³, rational arithmetic gives L(y*) < 0 and K(y*) ≠ 0, the fiber cubic at y* vanishes at z*₁ exactly and its residual quadratic Q has positive discriminant (two real conjugate preimages z′, z″); gcd tests mod Q certify L, K, B ≠ 0 at both conjugates, and a four-variable Gröbner computation gives 1 ∈ ⟨Q(u), F(w) − z′(u), 3w₂w₃ − 4⟩ — no preimage of either conjugate lies on the empty-fiber curve, so n₂(z′), n₂(z″) ≥ 1 and n₃(y*) ≥ 9 + 1 + 1 = 11, propagating to an open neighborhood since every contributing solution is nondegenerate (det DF³ ≡ −8). The whole chain runs in about a second; the key trick (the review's) is seeding the second level at the *rational* first-level point so only one quadratic extension ever appears.
+
+**IV.2b Machine-checked layer (revision 9).** The four n₂ level-set certificates are formalized in Lean 4 against mathlib (`KellerCerts.lean`, toolchain Lean 4.32.0 / mathlib v4.32.0). For each of the four rational points, a theorem `certificate_{nine, three, five, seven}` establishes, from explicit rational data and elementary ingredients only (a cubic-localization lemma proved by explicit factorization via `linear_combination`, the intermediate value theorem on rational sign-change intervals, and quadratic sign lemmas for the division remainders, with the division identities Nf = q·C + R proved by `ring`): *the fiber cubic has exactly three real roots — located in explicit disjoint rational intervals — and Nf carries the published sign at every root.* The file compiles with **zero sorries**, and `#print axioms` reports only `[propext, Classical.choice, Quot.sound]` for every theorem. Statement-matching discipline, stated in the file header and repeated here: what is formalized is the root-and-sign core that the Python exact certifier checks; the bridge facts — the root↔preimage bijection at K ≠ 0, the identity L(preimage) = Nf/Df on the fiber, and Df = 64K⁴ > 0 — remain in the report's verified-but-unformalized layer, so the Lean theorems *plus the quoted bridge* yield n₂ = 9, 3, 5, 7. The `--exact3` chain and the curve-injectivity computation are not yet formalized (their Gröbner steps would need certified cofactors); they remain at exact-computation rigor.
+
+### IV.3 Theorem (separation within the tower)
+
+The essential range of n₂ is {1,3,5,7,9} (each value exactly certified on an open set), the essential range of n₁ is {1,3}, and ess-range(n₃) contains a value ≥ 11 (exactly certified). All three ranges are pairwise distinct, and the essential range is invariant under unitary equivalence combined with every tame move. Therefore **S_F, S_{F∘F}, S_{F∘F∘F} are pairwise inequivalent quantum systems** — three inequivalent irregular representations of the CCR data from a single Keller seed, separated by exactly the invariant Question 4 proposes — and as of revision 6 the proof is exact end to end. Conjecturally the whole tower is pairwise inequivalent (M_k is nondecreasing, and strict growth at every level would follow from {n_k = M_k} meeting the three-sheeted region — verified computationally for k = 1, 2).
+
+### IV.4 Reducing completeness to covering rigidity
+
+The completeness half of Question 4 asks whether n (mod the tame action) *determines* the system. That question becomes tractable when rephrased geometrically, because the system is really a presentation of the covering:
+
+**Proposition (covariance).** If φ is a polynomial automorphism of ℝ³ with G∘φ = F, then S_F and S_G are strictly unitarily equivalent, via (Uψ) = |det Dφ|^{1/2}·ψ∘φ (a constant, since φ is Keller). *Proof.* U is unitary; U carries multiplication by G_i to multiplication by G_i∘φ = F_i; and the momentum fields match because row i of ((DG)ᵀ)⁻¹ is the unique vector field G-related to ∂/∂y_i, so its φ-pullback is the unique field (G∘φ)-related = F-related to ∂/∂y_i, which is row i of ((DF)ᵀ)⁻¹; the Piola divergence terms vanish on both sides, so U intertwines the tuples on C_c^∞. ∎
+
+So the system depends only on the covering (F : ℝ³ → ℝ³) up to automorphism upstairs — and, conversely, one expects the system to *remember* the covering: W*(Q′) recovers the base measure class and n (Hahn–Hellinger, rigorous), and the momentum tuple generates the lifted local translation flows whose groupoid is the covering's — a reconstruction we state as expected but do not prove (the domain bookkeeping for the non-e.s.a. momenta is genuinely delicate). Modulo that reconstruction, **completeness of n is equivalent to: two Keller coverings with the same multiplicity function (up to the moves) are isomorphic**. That is a rigidity question about coverings, and the covering datum most obviously invisible to n is **monodromy** — how the sheets permute around loops in {L < 0}.
+
+**Computation (`monodromy` subcommand).** The verified-lift cover graph — guarded continuation only, no proximity completion — is computed over the **main base component**, which at N = 64, box |yᵢ| ≤ 8 comprises 25,278 of the 25,280 full-fiber L < 0 nodes (revision 5 conflated these two numbers; at N = 48 the split is 10,486 of 10,488). The robust criterion, satisfied at both resolutions, is: *no cover component exceeds the base-component size, and three base-sized components carry all but a negligible set of vertices* — at N = 64 exactly three components of 25,278 each; at N = 48 three of sizes (10,486, 10,486, 10,485) plus one isolated vertex from a lift failure (failure counts now printed per run). A monodromy misglue would merge sheet copies into *fewer, larger* components, which never occurs. Conclusion: the covering over the region explored is **trivial — three globally separated sheets, no monodromy**. Scope: a finite box; the unbounded far channels are not exhausted. A methodological note that belongs in the record: the *first* run of this computation, using the completion pass that is harmless for the spectrum mesh, reported transitive monodromy at box 8 — a proximity misglue in the far channels (where lift failures cluster), i.e. Appendix A.3's ghost in yet another costume, exposed by rebuilding the graph from verified lifts only. The spectrum results are unaffected (their box contains no such region, and the box-4 completed mesh already showed the correct three sheets).
+
+Consequently, for F itself the covering data beyond n is carried not by monodromy but by the **wall-gluing** — which sheet is persistent along which part of {L = 0} — and a completeness proof or counterexample must engage exactly that data.
+
+### IV.5 What remains open in Question 4
+
+Separation is proved; completeness is reduced (IV.4, modulo the flagged reconstruction step) to a covering-rigidity question, with the monodromy of F's covering computed trivial in the explored region — so the decisive data is the wall-gluing. What a full resolution needs: either a proof that the wall-gluing is determined by n for the relevant class of Keller maps, or a pair of family members realizing the same n with different gluing. Both need Alpöge's other counterexamples, or new constructions beyond the tower (whose members never share n). Status: **Question 4 partially resolved (separation established for the tower family; completeness reduced but open).**
+
+## Status of the note's open questions
+
+| # | question | status |
+|---|---|---|
+| 1 | deficiency indices of P′_v | **settled**: (∞, ∞) for coordinate directions; boundary is not thin; U(N₊→N₋) family of quantizations |
+| 2 | is {L = 0} smooth? | **settled**: no — Sing = empty-fiber curve, cuspidal edge; full n(y) stratification known |
+| 3 | Friedrichs spectrum on the boundary side | **answered**: boundary doublets at ≈5.41, 7.25, 9.03; transported ladder absent — and provably unrealizable in any extension (III.4 no-go theorem); Dirichlet/Neumann/reglued spectra computed, all distinct |
+| 4 | fiber count as invariant across the family | **partially resolved** (Part IV): separation proved exactly for the tower F, F², F³ — spec(C₂*C₂) = {1,3,5,7,9}, all values certified over ℚ, and n₃ ≥ 11 certified; completeness reduced to covering rigidity (IV.4), with F's monodromy computed trivial in the explored region; the note's original family still needed |
+
+## Corrections to the source note (consolidated)
+
+1. §10 table: replace "(exactly those with v₁ < 0)" by "exactly those v₁ < 0 directions whose ray meets {L = 0}"; 4.67 ± 0.01% of the sphere has v₁ < 0 and a wall-free ray, whose lift is complete by the covering argument.
+2. §4 Corollary 1: write the curve unambiguously as y(s) = (4/(27s²), 4/(3s), s).
+3. §7: record the three initial conditions (or their y and L values) to make the table reproducible.
+4. (Sharpening, not correction) Corollary 1's empty fibers occur *exactly* on the curve; on the rest of the wall n = 1.
+5. (Sharpening) §8's expected self-adjointness failure holds, with equal indices (∞, ∞) — extensions exist in abundance.
+
+## Reproduction
+
+Single script `keller_quantization.py`, subcommands:
+
+    python3 keller_quantization.py verify              # Part I: symbolic + fibers + key numerics (4k dirs)
+    python3 keller_quantization.py verify --dirs 400000 --seeds 1,2,3,4,5,11,12,13,14,15
+                                                       # the published 4M-direction census
+    python3 keller_quantization.py verify --dirs 400000 --seeds 1 --exactcheck 500
+                                                       # criterion vs exact arithmetic
+    python3 keller_quantization.py singular            # Thm 2: Sing{L=0}, Rabinowitsch, two-sided cusp check
+    python3 keller_quantization.py fates               # Thm 1: exchange-aware trajectory fates
+    python3 keller_quantization.py boundary            # Part I.2/I.3: 40/40, 25/25, wall-free lifts to t=50
+    python3 keller_quantization.py spectrum            # Part III: N=36 and N=44 with convergence table
+    python3 keller_quantization.py spectrum --N 24     # quick smoke test
+    python3 keller_quantization.py spectrum --N 44 --bc neumann   # III.4 extension family
+    python3 keller_quantization.py spectrum --N 44 --bc glue      #   (also --bc dirichlet)
+    python3 keller_quantization.py nogo                # III.4 no-go overlap, two methods
+    python3 keller_quantization.py tower --exact3      # Part IV: histograms, exact n2 certificates
+                                                       #   for {3,5,7,9}, and the exact n3 >= 11 step
+    python3 keller_quantization.py monodromy           # IV.4: verified-lift covering monodromy (N=64, box 8)
+
+Environment: Python 3 with SymPy ≥ 1.14, NumPy ≥ 2.4, SciPy ≥ 1.17. All symbolic checks are exact over ℚ. Measured runtimes on the machine that produced this report: verify ~15 s (~25 s per 400k census seed), singular ~5 s, fates ~2 s, boundary ~10 s, spectrum ~4 min, tower ~30 s at defaults (the exact certificates and `--exact3` add ~10 s), monodromy completed within 9.5 minutes at N = 64 and within ~4 minutes at --N 48 on the report machine, nogo ~40 s at the default 4×10⁷ Monte Carlo samples (which is the published figure's sample count), and the `--bc` spectrum variants ~2.5 min at N = 36 and ~10 min at N = 44. All runtimes are machine-specific measurements, not enforced budgets; the round-4 review measured tower at 109 s on its hardware. Part IV's discovery-phase searches (the ~600k-sample hunt that failed to find n₂ = 9 in the near regions before the wide log-scaled sampling succeeded) are summarized in IV.2 but not shipped; the shipped `tower` subcommand reproduces the certificate and both histograms directly. Not shipped as subcommands, disclosed here: the RK4 §7 in-kind check, the mpmath 50-digit exchange corroboration (construction fully specified in §I.4b, and now superseded by the Lemma), the §6-fiber backward-wall check, and the guarded-continuation adjudicator behind the revision-2 "12–0" figure (superseded by the second review's independent ~570-case adjudication). The Lean layer builds with `elan` + `lake build` in the `keller_lean/` project (pins: `lean-toolchain` = leanprover/lean4:v4.32.0, mathlib rev v4.32.0; mathlib olean cache fetched automatically; build of `KellerCerts.lean` itself ~35 s), and `lake env lean AxiomCheck.lean` reproduces the axiom audit. The level diagram accompanying Part III is `friedrichs_levels.html`; the 5.41 and 7.25 doublet splittings are drawn exaggerated for visibility while the 9.03 doublet is to scale, as its caption states.
+
+## Response to review (revision 1 → 2)
+
+An adversarial external review of revision 1 — independent re-derivation of the symbolic claims, fresh numerics, mesh instrumentation, and a coordinate-level audit of the figure — confirmed every headline result and produced eight findings. Dispositions:
+
+1. *Irreproducible fates table.* Confirmed, and the root cause was deeper than stale numbers: the review's one-trajectory discrepancy, chased to ground, exposed the K-crossing exchange rule (§I.4b) and a systematic death-over-count in path-following classifiers. The table is rebuilt on the exchange-aware algebraic classifier (adjudicated 12–0 against the alternatives on decidable disagreements) and now differs from revision 1 well beyond the review's flagged drift — dies/complete is 17.3%, not 3.3%. The artifact reproduces it deterministically in ~2 s.
+2. *"Subcommands reproduce every part" overclaim.* Fixed: scope stated precisely; a `boundary` subcommand now covers the 40/40, 25/25 and wall-free-lift claims; quantiles and the census are in `verify`; all 25 spectrum detail rows print. The review's observation that wall-free completeness needs no numerics (covering argument) is adopted in Part I.3 with credit.
+3. *Small-sample 4.1% quoted as population figure.* Fixed: 4.59 ± 0.03% (two independent 400k draws; criterion exact-validated 0/3000). The review's own figure, 4.69 ± 0.03%, differs by ~0.1 points; unresolved between implementations, immaterial to every conclusion. Wall-reaching: 45.4–45.5%.
+4. *No injectivity guard in the mesh matcher.* Confirmed and fixed (closer-claim-wins + demotion to the completion pass), with an explicit max-degree ≤ 6 assertion; a lift-step locality guard was added alongside. Eigenvalue changes: ≤ 0.001.
+5. *Cusp one-sidedness asserted, not computed; kernel-direction pick unchecked; dead code.* All fixed: both sides computed ([2,2,2] vs [0,0,0]), transverse eigenvalue signs asserted, dead code removed.
+6. *Theorem 1 "exactly once".* Corrected to "at most once" with the tube restriction made explicit; the proof is otherwise unchanged. The `_fate` caveats the review noted are superseded by the algebraic classifier, which has no continuation-failure pathway at all.
+7. *Figure splittings exaggerated without disclosure.* Disclosed in the figure and above.
+8. *Source note not verifiable; half-space interpretation glossed degeneracy.* The note and its companion script are now pinned by SHA-256 in the header (the note is the user-supplied input, not bundled); the III.2(b) interpretation now states the missing E = 7 transverse partner explicitly.
+
+**Second round (revision 2 → 3).** The follow-up review re-ran all subcommands (exact reproduction), independently re-adjudicated the fate table (~570 certifiable classifications, 233 K-crossings — full agreement, zero identity permutations), and found:
+
+- **B1 (the one real error): the census figure 4.59 ± 0.03% was a fixed-seed artifact.** Confirmed. The shipped code hard-coded seed 7, and revision 2's "second independent 400k draw" reused the identical stream — the sentence was false, and the seed sat 2.3σ low. Corrected: 4.67 ± 0.01% from ten fresh seeds × 400k (4M directions), with `--seeds` now a first-class option and the exact-arithmetic criterion check shipped as `--exactcheck` (0 disagreements in 3,500 cumulative). The revision-1 reviewer's 4.69% was closer to the truth than revision 2's correction of it.
+- *Exchange rule provable, not just observed.* Adopted: §I.4b now states and proves the Lemma (the review's two-line argument from Δ = −4K²L and root-sum-zero, found independently); the 50-digit computation is demoted to corroboration.
+- *Mislabelled fates counter.* Fixed: degenerate rays are counted and labelled as what they are (classified 'complete', measure zero); a separate exchange-certificate counter was added (1 flag in 600).
+- *Unreproducible "12–0" and "0/3000" figures.* The exact-check is now shipped; the revision-2 adjudicator is disclosed as unshipped and superseded by the review's larger independent adjudication.
+- *Figure levels stale by up to 0.007; "guards shift ≤ 0.001" overclaim; "four decades" was two.* All fixed: the figure is redrawn from the final N = 44 run, the guard-shift sentence now says ≤ 0.007 (mixed band) with ground state and doublets ≤ 0.001, and the cusp fit is described as two decades.
+
+**Third round (revision 3 → 4).** This review re-ran the complete artifact (4M census: 4.666 ± 0.010% against the published 4.67 ± 0.01; spectrum identical to 10⁻⁴), re-derived all symbolic claims in a fresh session, attacked the fate classifier with three independently built referees (two of which fell into the catalogued ghost-point and sheet-hop traps before hardening — a fourth independent replication of Appendix A — and the decisive rank-conservation referee agreed on all 1,200 classifications), and verified (x_a−x_b)/K constant to six figures through crossings. Findings and dispositions:
+
+- *"Sub-pixel" caption claim false for the 9.03 doublet.* Fixed: the caption now states that the 5.41 and 7.25 splittings are exaggerated while the 9.03 doublet (separation 0.047) is drawn approximately to scale.
+- *Stale revision-2 eigenvalues in the SVG's inline comments.* Fixed; comments now match the drawn lines and the final run.
+- *The completion pass's 7-point sign check could be a proof for free.* Adopted — and it was not merely cosmetic: L restricted to a grid edge is univariate of degree ≤ 3, and the exact interpolation-plus-root certificate exposed ~20 edges (N = 44) that cross the wall twice between nodes of equal sign, which the sampler had wrongly certified as interior. Correcting them moves mixed-band levels by up to 0.05 (final table above); ground state and doublets move by ≤ 0.004; every qualitative conclusion is unchanged.
+- *Precision slips around III.2.* Fixed: the inter-resolution agreement range is now stated as 0.005–0.07, and all quoted eigenvalues and mesh counts are from the final certified run.
+
+**Fourth round (revision 5 → 6).** This round audited the previously unreviewed Part IV line by line, alongside a full artifact re-run (Parts I–III reproduced to the digit, including the complete fates table, spectrum, and a fresh 3-seed census at 4.676 ± 0.025%). Findings and dispositions:
+
+1. *IV.2 remark (i) false — F² does not miss F(curve).* Confirmed and corrected. L(F(c(s))) changes sign along the curve (the review's exact formula and s = 1/2 counterexample are adopted and were re-verified here over ℚ); revision 5's claim rested on three probes that all sat in the positive sub-arc. The corrected statement — non-surjectivity only on the positive sub-arc, even values n₂ ∈ {2,4,6} on the complementary null sub-arc — is a sharper parity-bending than the false version claimed.
+2. *F²–F³ separation float-only.* Fixed by shipping the review's exact certificate as `tower --exact3` (n₃(y*) ≥ 11 at y* = F(z*), all steps over ℚ or one quadratic extension, ~1 s); Theorem IV.3 is restated as exact end to end.
+3. *"Exact arithmetic" mislabel on the n₂ = 9 certificate.* Confirmed — revision 5 shipped 50-digit floating-point sign evaluation. Replaced by genuine rational-interval isolation with root counting; result unchanged, label now true.
+4. *n₂ = 3, 5, 7 level sets sampled, not certified.* The review's three rational certificate points adopted and verified exactly (sign patterns (+,+,+), (+,−,+), (+,−,−)); spec(C₂*C₂) = {1,3,5,7,9} is now exact for every value.
+5. *Monodromy base-count conflation and resolution fragility.* Fixed: 25,278-node main component of 25,280 full-fiber nodes; the claim is restated via the robust criterion (no component exceeds base size; three base-sized components carry ~all vertices), the N = 48 singleton is disclosed, and lift-failure counts are printed per run.
+6. *A₂ type fitted, not proved.* Adopted the review's symbolic criterion: D³L(k,k,k) = 6t with all tangent-slot cubics vanishing, verified along the whole curve in `singular`; Theorem 2's cusp leg is now a theorem, with the fit demoted to corroboration.
+7. *Self-description stale (header "five subcommands"; docstring describing revision-1 methodology that the shipped fates classifier contradicts).* Both regenerated from scratch rather than patched.
+8. *Dead code returned.* `_continue_signed` (~40 lines, unreferenced) and the unused variables in `cmd_monodromy` removed; expected-overflow warnings silenced with targeted `np.errstate` so real diagnostics are visible.
+9. *Runtime phrasing.* Restated as machine-specific measurements (the review measured tower at 109 s against ~30 s here); the δ-dependence of the "±35.5" figure in I.2 is now stated with its convention.
+
+**Fifth round (revision 7 → 8).** This round audited §III.4, re-ran all eight subcommands (including the three-extension spectra and monodromy — all reproduced), re-derived the symbolic layer independently, and built three fresh instruments: a grid-free rank-conservation fate classifier (600/600 agreement), a chart-free Newton fiber arbiter for the Part IV certificates, and a variance-reduced 4×10⁸-sample Monte Carlo for the no-go overlap (−0.2121752 ± 0.0000123, confirming the quadrature value to five decimals). The no-go proof, formula, and eigenfunction premise all verified exactly. Findings and dispositions:
+
+1. *§III.4 logic overclaim: "as the theorem demands, none contains 3, 5, 7" — and the same conflation in the table row "free ladder … unrealizable, by the theorem."* Confirmed and corrected in both places: the theorem forbids the transported eigen*family* from coexisting, not individual levels; the review's construction of a self-adjoint extension realizing level 3 (symmetric extension by the real vector Ch₀₀₀; equal indices via the real structure) is adopted into the text; the table row is recaptioned "unrealizable *as a family*"; and the absence of the free levels in the three computed extensions is stated as empirical.
+2. *IV.2 even-values claim certified only at s = 1/2.* Closed with the review's global proof: the curve-injectivity Gröbner computation (F∘c injective ⟹ c(s) is the only on-curve preimage of F(c(s)) for all s), verified here and shipped in `tower --exact3`.
+3. *Quadrature error "~3×10⁻⁷" not credible (the integrator warns).* Restated: the quadrature value stands, its accuracy statement now rests on the two independent Monte Carlo runs; the `nogo` default sample count is raised to match the published figure and the subcommand prints the honest caveat.
+4. *Docstring revision pin stale again.* The pin is removed entirely, retiring this drift class.
+5. *Glue/Neumann bookkeeping: components are computed before glue edges are added*, so a wall pair with a vertex outside the main component would be silently dropped by the spectral restriction while still counted as "applied." Vacuous in practice (the review measured 0 affected pairs at N = 32; 0 here at N = 24), but now counted and reported whenever nonzero; a multi-pair-vertex counter was added alongside.
+6. *"Neumann ≤ Dirichlet requires" too strong for FD analogues.* Softened to consistency with form-domain monotonicity.
+7. *Rounding and consistency nits.* Eigenvalues unified to four decimals in both tables (5.5495, 6.0745); the wall-reaching quotes reconciled with per-seed scatter stated; the I.2 dying-pair figure tightened to ±35.3.
+
+The review also recorded that its own first re-certification of the n₂ certificates was wrong and was refuted by its direct arbiter — a fifth accidental replication of the source note's Appendix A across five independent instrument-builders.

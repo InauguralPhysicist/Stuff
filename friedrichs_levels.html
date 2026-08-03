@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Friedrichs spectrum of the transformed oscillator</title>
+<style>
+  .viz-root {
+    color-scheme: light;
+    --surface-1: #fcfcfb;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #8a897f;
+    --grid: #e8e7e2;
+    --series-1: #2a78d6;   /* main-sheet states */
+    --series-2: #eb6834;   /* boundary-localized doublets */
+    --ref: #9b9a90;        /* reference ladders */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--surface-1);
+    color: var(--text-primary);
+    margin: 0; padding: 24px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --surface-1: #1a1a19; --text-primary: #ffffff; --text-secondary: #c3c2b7;
+      --text-muted: #8a897f; --grid: #34332f;
+      --series-1: #3987e5; --series-2: #d95926; --ref: #757468;
+    }
+  }
+  h1 { font-size: 16px; font-weight: 600; margin: 0 0 2px; }
+  .sub { font-size: 12.5px; color: var(--text-secondary); margin: 0 0 14px; max-width: 640px; }
+  .legend { display: flex; gap: 18px; font-size: 12px; color: var(--text-secondary); margin: 10px 0 4px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+  text { fill: var(--text-secondary); font-size: 11px; }
+  .lvl-label { font-size: 10.5px; }
+  .colhead { font-size: 12px; font-weight: 600; fill: var(--text-primary); }
+  .note { font-size: 11.5px; color: var(--text-muted); max-width: 640px; margin-top: 10px; }
+</style>
+</head>
+<body class="viz-root">
+<h1>Low spectrum of &minus;&Delta;<sub>g</sub>&#8202;+ |F|&sup2; &mdash; Friedrichs extension vs references</h1>
+<p class="sub">Flat-oscillator units (exact free levels 2n+3). Middle column: the branched-manifold
+computation (N=44 grid, Dirichlet on the dying sheets at the wall). The transported Hermite
+ladder is absent; new nearly-degenerate doublets sit in the escape channels near the metric boundary.
+<em>The 5.41 and 7.25 doublet splittings are exaggerated for visibility (true separations
+0.0004 and 0.004 in E &mdash; sub-pixel at this scale); the 9.03 doublet (separation 0.042)
+is drawn to scale.</em></p>
+<div class="legend">
+  <span><span class="sw" style="background:var(--ref)"></span>reference ladder</span>
+  <span><span class="sw" style="background:var(--series-1)"></span>main-sheet state</span>
+  <span><span class="sw" style="background:var(--series-2)"></span>boundary-localized doublet (&#8805;85% of weight at |x|&gt;10)</span>
+</div>
+<svg width="660" height="470" viewBox="0 0 660 470" role="img"
+     aria-label="Energy level diagram comparing exact oscillator, Friedrichs extension, and Dirichlet reference">
+  <!-- y scale: E in [2.6, 10.4] -> y = 430 - (E-2.6)*(400/7.8) -->
+  <g>
+    <!-- gridlines at integer E -->
+    <g stroke="var(--grid)" stroke-width="1">
+      <line x1="70" x2="640" y1="409.5" y2="409.5"/> <!-- E=3 -->
+      <line x1="70" x2="640" y1="307.0" y2="307.0"/> <!-- E=5 -->
+      <line x1="70" x2="640" y1="204.4" y2="204.4"/> <!-- E=7 -->
+      <line x1="70" x2="640" y1="101.8" y2="101.8"/> <!-- E=9 -->
+    </g>
+    <g class="lvl-label" text-anchor="end">
+      <text x="62" y="413">3</text><text x="62" y="310">5</text>
+      <text x="62" y="208">7</text><text x="62" y="105">9</text>
+      <text x="30" y="260" transform="rotate(-90 30 260)" style="font-size:11.5px">energy E</text>
+    </g>
+    <!-- column headers -->
+    <text class="colhead" x="150" y="32" text-anchor="middle">exact ladder</text>
+    <text class="colhead" x="150" y="46" text-anchor="middle" style="font-weight:400">no boundary (2n+3)</text>
+    <text class="colhead" x="365" y="32" text-anchor="middle">Friedrichs extension</text>
+    <text class="colhead" x="365" y="46" text-anchor="middle" style="font-weight:400">branched manifold</text>
+    <text class="colhead" x="565" y="32" text-anchor="middle">Dirichlet on {L&gt;0}</text>
+    <text class="colhead" x="565" y="46" text-anchor="middle" style="font-weight:400">hard wall everywhere</text>
+
+    <!-- exact ladder (degeneracy as tick multiplicity labels) -->
+    <g stroke="var(--ref)" stroke-width="2.5" stroke-linecap="round">
+      <line x1="100" x2="200" y1="409.5" y2="409.5"/>
+      <line x1="100" x2="200" y1="307.0" y2="307.0"/>
+      <line x1="100" x2="200" y1="204.4" y2="204.4"/>
+      <line x1="100" x2="200" y1="101.8" y2="101.8"/>
+    </g>
+    <g class="lvl-label">
+      <text x="206" y="413">3 &times;1</text>
+      <text x="206" y="310">5 &times;3</text>
+      <text x="206" y="208">7 &times;6</text>
+      <text x="206" y="105">9 &times;10</text>
+    </g>
+
+    <!-- Friedrichs levels, N=44 (revision-4 certified run): y = 430 - (E-2.6)*51.282 -->
+    <!-- main-sheet (blue): 3.6383->376.8, 5.5495->278.7, 6.0745->251.8,
+         6.3443->238.0, 7.4737->180.1, 7.9393->156.2, 8.1692->144.4,
+         8.2734->139.1, 8.3514->135.1, 8.4830->128.3, 8.6281->120.9 -->
+    <g stroke="var(--series-1)" stroke-width="2.5" stroke-linecap="round">
+      <line x1="305" x2="425" y1="376.8" y2="376.8"/>
+      <line x1="305" x2="425" y1="278.7" y2="278.7"/>
+      <line x1="305" x2="425" y1="251.8" y2="251.8"/>
+      <line x1="305" x2="425" y1="238.0" y2="238.0"/>
+      <line x1="305" x2="425" y1="180.1" y2="180.1"/>
+      <line x1="305" x2="425" y1="156.2" y2="156.2"/>
+      <line x1="305" x2="425" y1="144.4" y2="144.4"/>
+      <line x1="305" x2="425" y1="139.1" y2="139.1"/>
+      <line x1="305" x2="425" y1="135.1" y2="135.1"/>
+      <line x1="305" x2="425" y1="128.3" y2="128.3"/>
+      <line x1="305" x2="425" y1="120.9" y2="120.9"/>
+    </g>
+    <!-- boundary doublets (orange): 5.4089/5.4093 and 7.2490/7.2533 drawn
+         +/-1.25px around their true midlines (285.9, 191.5) since the real
+         separations are sub-pixel; 9.0123/9.0546 drawn TO SCALE (101.2, 99.0) -->
+    <g stroke="var(--series-2)" stroke-width="2.5" stroke-linecap="round">
+      <line x1="305" x2="425" y1="287.2" y2="287.2"/>
+      <line x1="305" x2="425" y1="284.7" y2="284.7"/>
+      <line x1="305" x2="425" y1="192.7" y2="192.7"/>
+      <line x1="305" x2="425" y1="190.2" y2="190.2"/>
+      <line x1="305" x2="425" y1="101.2" y2="101.2"/>
+      <line x1="305" x2="425" y1="99.0" y2="99.0"/>
+    </g>
+    <g class="lvl-label">
+      <text x="431" y="380">3.64 ground</text>
+      <text x="431" y="289">5.41 &times;2</text>
+      <text x="431" y="194">7.25 &times;2</text>
+      <text x="431" y="103">9.03 &times;2</text>
+      <text x="245" y="282" text-anchor="start" style="font-size:10px">5.55</text>
+      <text x="245" y="255" text-anchor="start" style="font-size:10px">6.07</text>
+      <text x="245" y="241" text-anchor="start" style="font-size:10px">6.34</text>
+    </g>
+
+    <!-- Omega_plus Dirichlet levels: 4.773->318.6, 6.683->220.6, 6.910->209.0,
+         8.205->142.6, 8.584->123.2, 8.682->118.1, 8.782->113.0, 9.040->99.8 -->
+    <g stroke="var(--ref)" stroke-width="2.5" stroke-linecap="round">
+      <line x1="510" x2="620" y1="318.6" y2="318.6"/>
+      <line x1="510" x2="620" y1="220.6" y2="220.6"/>
+      <line x1="510" x2="620" y1="209.0" y2="209.0"/>
+      <line x1="510" x2="620" y1="142.6" y2="142.6"/>
+      <line x1="510" x2="620" y1="123.2" y2="123.2"/>
+      <line x1="510" x2="620" y1="118.1" y2="118.1"/>
+      <line x1="510" x2="620" y1="113.0" y2="113.0"/>
+      <line x1="510" x2="620" y1="99.8" y2="99.8"/>
+    </g>
+    <g class="lvl-label">
+      <text x="626" y="322">4.77</text>
+      <text x="626" y="224">6.68</text>
+    </g>
+  </g>
+</svg>
+<p class="note">FD calibration on the same grid: exact levels 3, 5, 7 reproduce to &minus;0.01, &minus;0.02, &minus;0.05.
+The Friedrichs ground state (3.64) lies strictly between the boundary-free value 3 and the
+hard-wall value 4.77 &mdash; the wall is transparent on the persistent sheet, Dirichlet on the two dying
+sheets. Doublets are the even/odd pairs under (y&#8321;, y&#8322;, y&#8323;) &rarr; (y&#8321;, &minus;y&#8322;, &minus;y&#8323;);
+their splitting shrinks with grid refinement (5.4089 / 5.4093 at N=44).</p>
+</body>
+</html>
