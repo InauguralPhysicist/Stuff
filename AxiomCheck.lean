@@ -16,3 +16,7 @@ open KellerCerts
 #print axioms KellerBridge.g2Nine
 #print axioms KellerBridge.g3Nine
 #print axioms KellerBridge.nfBridgeNine
+#print axioms KellerBridge.fiber_nine
+#print axioms KellerBridge.fiber_three
+#print axioms KellerBridge.fiber_five
+#print axioms KellerBridge.fiber_seven
