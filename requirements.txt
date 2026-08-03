@@ -1,0 +1,6 @@
+# Versions used for the published figures in keller_quantization_report.md
+# (revision 9). Newer versions will almost certainly work, but exact pins
+# keep the reported numbers bit-reproducible where seeds allow.
+sympy==1.14.0
+numpy==2.4.4
+scipy==1.17.1
