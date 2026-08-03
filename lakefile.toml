@@ -11,4 +11,7 @@ rev = "v4.32.0"
 name = "KellerCerts"
 
 [[lean_lib]]
+name = "KellerBridge"
+
+[[lean_lib]]
 name = "AxiomCheck"
