@@ -14,6 +14,9 @@
 -/
 import KellerBridge
 
+set_option maxRecDepth 16384
+set_option maxHeartbeats 1600000
+
 namespace KellerDepth
 open KellerCerts KellerBridge
 
