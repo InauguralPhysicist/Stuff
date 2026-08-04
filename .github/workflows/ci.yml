@@ -9,6 +9,10 @@ jobs:
   lean:
     name: Lean certificates
     runs-on: ubuntu-latest
+    env:
+      # Serialize elaboration: concurrent heavy ring checks stack their
+      # memory peaks and OOM the 16 GB runner (exit 143).
+      LEAN_NUM_THREADS: 1
     steps:
       - uses: actions/checkout@v4
 
@@ -39,6 +43,9 @@ jobs:
 
       - name: Build existence layer
         run: lake build KellerExist
+
+      - name: Build composition layer
+        run: lake build KellerComp
 
       - name: Audit axioms
         run: |

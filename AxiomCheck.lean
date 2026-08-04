@@ -2,6 +2,7 @@ import KellerCerts
 import KellerBridge
 import KellerDepth
 import KellerExist
+import KellerComp
 open KellerCerts
 #print axioms certificate_nine
 #print axioms certificate_three
@@ -28,3 +29,5 @@ open KellerCerts
 #print axioms KellerExist.exists_glob1
 #print axioms KellerExist.exists_glob2
 #print axioms KellerExist.exists_glob3
+#print axioms KellerComp.comp_nine
+#print axioms KellerComp.comp_nine_count

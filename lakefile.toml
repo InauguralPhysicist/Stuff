@@ -20,4 +20,7 @@ name = "KellerDepth"
 name = "KellerExist"
 
 [[lean_lib]]
+name = "KellerComp"
+
+[[lean_lib]]
 name = "AxiomCheck"

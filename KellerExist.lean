@@ -14,6 +14,10 @@ import KellerBridge
 namespace KellerExist
 open KellerCerts KellerBridge
 
+/- Chunk definitions keep a uniform argument list; a chunk need not
+   mention every variable. -/
+set_option linter.unusedVariables false
+
 set_option maxHeartbeats 400000 in
 noncomputable def W1exAA (ξ u v w b : ℝ) : ℝ := (-6561 : ℝ) * ξ^5 * u^3 * v^2 * w^4 * b^3 + (-4374 : ℝ) * ξ^5 * u^3 * v * w^3 * b^3 + (11664 : ℝ) * ξ^5 * u^3 * w^2 * b^3 + (6561 : ℝ) * ξ^5 * u^2 * v^3 * w^3 * b^3 + (-3402 : ℝ) * ξ^5 * u^2 * v^2 * w^2 * b^3 + (-10368 : ℝ) * ξ^5 * u^2 * v * w * b^3 + (6912 : ℝ) * ξ^5 * u^2 * b^3 + (-243 : ℝ) * ξ^5 * u * v^5 * w^3 * b^3 + (-1377 : ℝ) * ξ^5 * u * v^4 * w^2 * b^3 + (3510 : ℝ) * ξ^5 * u * v^3 * w * b^3 + (-1872 : ℝ) * ξ^5 * u * v^2 * b^3 + (81 : ℝ) * ξ^5 * v^6 * w^2 * b^3 + (-171 : ℝ) * ξ^5 * v^5 * w * b^3 + (90 : ℝ) * ξ^5 * v^4 * b^3 + (-19683 : ℝ) * ξ^4 * u^3 * v^2 * w^4 * b^2 + (4374 : ℝ) * ξ^4 * u^3 * v * w^4 * b^3
 set_option maxHeartbeats 400000 in
