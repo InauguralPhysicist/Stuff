@@ -36,7 +36,18 @@ jobs:
         run: lake build KellerExist
 
       - name: Audit axioms
-        run: lake build AxiomCheck
+        run: |
+          lake build AxiomCheck | tee axiom_audit.log
+          grep -q "depends on axioms" axiom_audit.log \
+            || { echo "::error::no axiom report in build output"; exit 1; }
+          if grep -n "sorry" axiom_audit.log; then
+            echo "::error::sorry detected in audited theorems"; exit 1
+          fi
+          if grep "depends on axioms" axiom_audit.log \
+              | grep -oE '\[[^]]*\]' | tr -d '[] ' | tr ',' '\n' \
+              | grep -vxE 'propext|Classical\.choice|Quot\.sound'; then
+            echo "::error::unexpected axiom detected"; exit 1
+          fi
 
   python:
     name: Python suite (smoke)
@@ -56,3 +67,6 @@ jobs:
 
       - name: CLI sanity
         run: python keller_quantization.py --help
+
+      - name: F^4 exact certificate
+        run: python tower4_certificate.py
