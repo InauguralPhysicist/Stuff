@@ -308,7 +308,7 @@ theorem story2_nine_1 :
       (by exact s2) (by exact s3)
     have e3x : Lpoly r (P2Nine r) (P3Nine r) * t3^3
         + Bpoly (P2Nine r) (P3Nine r) * t3 - 2 * P3Nine r = 0 := ht3z
-    refine ⟨t1, t2, t3, by linarith, by linarith, ?_⟩
+    refine ⟨sLZ, sK, t1, t2, t3, by linarith, by linarith, ?_⟩
     intro t
     constructor
     · intro ht
@@ -414,7 +414,7 @@ theorem story2_nine_2 :
       (by exact s2) (by exact s3)
     have e3x : Lpoly r (P2Nine r) (P3Nine r) * t3^3
         + Bpoly (P2Nine r) (P3Nine r) * t3 - 2 * P3Nine r = 0 := ht3z
-    refine ⟨t1, t2, t3, by linarith, by linarith, ?_⟩
+    refine ⟨sLZ, sK, t1, t2, t3, by linarith, by linarith, ?_⟩
     intro t
     constructor
     · intro ht
@@ -517,7 +517,7 @@ theorem story2_nine_3 :
       (by exact s2) (by exact s3)
     have e3x : Lpoly r (P2Nine r) (P3Nine r) * t3^3
         + Bpoly (P2Nine r) (P3Nine r) * t3 - 2 * P3Nine r = 0 := ht3z
-    refine ⟨t1, t2, t3, by linarith, by linarith, ?_⟩
+    refine ⟨sLZ, sK, t1, t2, t3, by linarith, by linarith, ?_⟩
     intro t
     constructor
     · intro ht
