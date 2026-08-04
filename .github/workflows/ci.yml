@@ -32,6 +32,9 @@ jobs:
       - name: Build depth layer
         run: lake build KellerDepth
 
+      - name: Build existence layer
+        run: lake build KellerExist
+
       - name: Audit axioms
         run: lake build AxiomCheck
 
