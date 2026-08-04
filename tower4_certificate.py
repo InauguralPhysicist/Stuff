@@ -95,6 +95,9 @@ def main():
     assert len(uni) == 1
     sol = sp.solve([g for g in G.exprs if g not in uni], [x2, x3], dict=True)[0]
     Z = [u, sp.together(sol[x2]).subs(x1, u), sp.together(sol[x3]).subs(x1, u)]
+    for comp in Z[1:]:
+        assert not sp.fraction(sp.together(comp))[1].has(u), \
+            "shape-lemma chart denominator must be u-free"
     QrU = sp.Poly(Qr.as_expr().subs(x1, u), u)
 
     def red(expr):
@@ -117,7 +120,9 @@ def main():
             n1, d1 = sp.fraction(sp.together(target[i]))
             nz, dz = sp.fraction(sp.together(Z[i]))
             e = sp.expand(n1*dz - d1*sp.rem(sp.Poly(sp.expand(nz), u), QrU, u).as_expr())
-            eqs.append(sp.Poly(e, u))
+            ep = sp.Poly(e, u)
+            assert ep.degree() <= 1, "cleared equation must be linear in u"
+            eqs.append(ep)
         ab = [(e.coeff_monomial(1), e.coeff_monomial(u)) for e in eqs]
         a1, b1 = ab[0]
         q2, q1c, q0 = [QrU.coeff_monomial(u**k) for k in (2, 1, 0)]
