@@ -11,3 +11,5 @@ venv/
 # OS / editor
 .DS_Store
 *.swp
+exist_build.log
+Min*.lean
