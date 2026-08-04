@@ -21,9 +21,6 @@ open KellerCerts
 #print axioms KellerBridge.fiber_three
 #print axioms KellerBridge.fiber_five
 #print axioms KellerBridge.fiber_seven
-#print axioms KellerDepth.exists_glob1
-#print axioms KellerDepth.exists_glob2
-#print axioms KellerDepth.exists_glob3
 #print axioms KellerDepth.story2_nine_1
 #print axioms KellerDepth.story2_nine_2
 #print axioms KellerDepth.story2_nine_3
