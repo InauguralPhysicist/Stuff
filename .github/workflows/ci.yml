@@ -91,8 +91,10 @@ jobs:
       - name: Compile check
         run: python -m py_compile keller_quantization.py family_hunt.py
 
-      - name: Family hunt phase 0 (smoke)
-        run: python family_hunt.py --samples 12
+      - name: Family hunt (smoke)
+        # exercises the import-time identity gates (incl. reverse-lift),
+        # the wall regression targets, and the phase-2 calibration gate
+        run: python family_hunt.py --samples 12 --phase2 8 --phase2-wide 4
 
       - name: CLI sanity
         run: python keller_quantization.py --help
