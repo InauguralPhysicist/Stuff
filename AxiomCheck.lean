@@ -35,3 +35,5 @@ open KellerCerts
 #print axioms KellerTower.certificate_star
 #print axioms KellerTower.tower_nine
 #print axioms KellerTower.cubic_real_root
+#print axioms KellerTower.sibling_lift
+#print axioms KellerTower.tower_eleven
