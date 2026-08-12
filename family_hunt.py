@@ -19,15 +19,28 @@ polynomial), that they differ as polynomial maps, and takes first exact
 fiber-count measurements (Groebner eliminant + Sturm count per rational
 sample point).
 
-Phase-0 finding (2026-08-12, seed 7, N = 80): both members attain the same
-candidate n1 value set {0, 1, 2, 3, 4} with similar frequencies, and both
-attain the full count 4 at their certificate targets -- so n1 does not
-visibly separate same-degree members, and the hunt moves to n2.
+Phase 1 (fiber determination, DONE): for any target (A,B,C) with C != 0,
+the w = u*gamma values of the preimages are exactly the real roots of
 
-CAVEAT (phase-1 work): the per-point count is the real-root count of the
-lex-Groebner eliminant, NOT yet a verified preimage count -- extraneous
-roots at chart-degeneracy loci are possible (the analog of F's K = 0).
-Phase 1 = per-member fiber determination in the style of report II.3.
+    E(w) = -H(w) + w*(H'(0) + B*C) - A*C^2        (constant leading coeff!)
+
+with the chart x = C/(B*C - p(w)), u = w*x/C, y = (u-1)/x,
+z = (gamma-1-a*(u-1))/x^2 lifting each root off the escape locus
+{B*C = p(w)}. Both the inverse identity E(u*gamma) == 0 and the chart
+identity x*(B*C - p(w)) == C are verified symbolically at import (the
+analogs of F's cubic_identity/shape identities). Since C != 0 forces
+x != 0 at every preimage, n1 = count_roots(E) EXACTLY off the guarded
+(measure-zero) strata. No Groebner per point, no chart artifacts.
+
+Phase 0/1 findings (2026-08-12): phase 0's odd n1 values 1, 3 were
+eliminant artifacts -- certified n1 value sets are {0, 2, 4} for BOTH
+members (N = 400 exact). Phase 2 (numeric n2, 60-digit relative-threshold
+discipline): both members attain n2 in {0, 2, 4, 6, 8, 10, 12} (wide
+log-scaled search, 486 targets total); neither has reached 14 or 16.
+Through n2, the multiplicity invariant does NOT separate the same-degree
+pair -- the completeness question is live. Next: hunt the extreme n2
+strata to certify max ess-range(n2) per member, then n3 or the
+wall-gluing data directly.
 """
 import argparse
 import random
@@ -84,17 +97,33 @@ def build_member(roots):
     return dict(roots=roots, a=a, H=H, F=F)
 
 
-def n1_eliminant(F, target):
-    """Real-root count of the x-eliminant of F(x,y,z) = target (see CAVEAT)."""
-    gens = [sp.expand(f - t) for f, t in zip(F, target)]
-    G = sp.groebner(gens, z, y, x, order='lex')
-    uni = [g for g in G.exprs if g.free_symbols <= {x}]
-    if len(uni) != 1:
+def member_kit(roots):
+    """build_member + inverse-equation data, with the two identities verified."""
+    M = build_member(roots)
+    H, a = M['H'], M['a']
+    Hp0 = sp.diff(H, w).subs(w, 0)
+    p = sp.expand(sp.diff(H, w) - Hp0)
+    F1, F2, F3 = M['F']
+    u = 1 + x*y
+    gam = 1 + a*x*y + x**2*z
+    W = sp.expand(u*gam)
+    inv_id = sp.expand(-H.subs(w, W) + W*(Hp0 + F2*F3) - F1*F3**2)
+    chart_id = sp.expand(x*(F2*F3 - p.subs(w, W)) - F3)
+    if inv_id != 0 or chart_id != 0:
+        raise ValueError("fiber-determination identities failed")
+    return dict(M, Hp0=Hp0, p=p)
+
+
+def n1_exact(M, target):
+    """CERTIFIED n1 for rational target with C != 0 (None on guarded strata)."""
+    Av, Bv, Cv = target
+    if Cv == 0:
         return None
-    P = sp.Poly(uni[0], x)
-    if P.degree() < 1:
+    E = sp.Poly(-M['H'] + w*(M['Hp0'] + Bv*Cv) - Av*Cv**2, w)
+    guard = sp.Poly(Bv*Cv - M['p'], w)
+    if sp.gcd(E, guard).total_degree() > 0:
         return None
-    return sp.count_roots(P)
+    return sp.count_roots(E)
 
 
 def main():
@@ -104,17 +133,17 @@ def main():
     args = ap.parse_args()
     ok = True
 
-    A = build_member([0, -1, 3, 4])
-    B = build_member([0, -1, -2, Q(3, 2)])
-    print("A (atlas n=4) and B (alternative n=4) built: det J == 1 both: True")
+    A = member_kit([0, -1, 3, 4])
+    B = member_kit([0, -1, -2, Q(3, 2)])
+    print("A (atlas n=4) and B (alternative n=4) built; det J == 1 and both")
+    print("fiber-determination identities verified symbolically: True")
     distinct = not all(sp.expand(fa - fb) == 0 for fa, fb in zip(A['F'], B['F']))
     ok &= distinct
     print("A and B are distinct polynomial maps:", distinct)
 
     for name, M in (('A', A), ('B', B)):
-        Hp0 = sp.diff(M['H'], w).subs(w, 0)
-        tgt = (Q(0), -Hp0, Q(1))
-        c = n1_eliminant(M['F'], tgt)
+        tgt = (Q(0), -M['Hp0'], Q(1))
+        c = n1_exact(M, tgt)
         ok &= (c == 4)
         print("member %s attains the full fiber count 4 at its target: %s"
               % (name, c == 4))
@@ -127,14 +156,17 @@ def main():
         pt = tuple(Q(random.randint(-6*scale, 6*scale), random.randint(1, 8))
                    for _ in range(3))
         for name, M in (('A', A), ('B', B)):
-            c = n1_eliminant(M['F'], pt)
+            c = n1_exact(M, pt)
             if c is not None:
                 hist[name][c] = hist[name].get(c, 0) + 1
-    print("n1 eliminant-count histograms [%ds]:" % (time.time() - t0))
+    print("certified n1 histograms [%ds]:" % (time.time() - t0))
     print("  A:", dict(sorted(hist['A'].items())))
     print("  B:", dict(sorted(hist['B'].items())))
     print("attained sets: A = %s, B = %s"
           % (sorted(hist['A']), sorted(hist['B'])))
+    odd = [v for v in list(hist['A']) + list(hist['B']) if v % 2]
+    ok &= not odd
+    print("no odd (chart-artifact) values in certified counts:", not odd)
 
     print("\nPHASE 0 %s" % ("COMPLETE" if ok else "FAILED"))
     return 0 if ok else 1
