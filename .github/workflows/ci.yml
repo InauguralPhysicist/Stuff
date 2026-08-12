@@ -100,6 +100,9 @@ jobs:
         # exact decision, both directions; exits nonzero unless excluded
         run: python family_equiv.py
 
+      - name: Wall-gluing structural lemmas (FAMILY_GLUING.md L1-L7)
+        run: python family_gluing_structure.py
+
       - name: CLI sanity
         run: python keller_quantization.py --help
 
