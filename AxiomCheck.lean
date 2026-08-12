@@ -37,3 +37,4 @@ open KellerCerts
 #print axioms KellerTower.cubic_real_root
 #print axioms KellerTower.sibling_lift
 #print axioms KellerTower.tower_eleven
+#print axioms KellerTower.fiber_nonempty
