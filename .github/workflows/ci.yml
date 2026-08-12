@@ -89,7 +89,10 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Compile check
-        run: python -m py_compile keller_quantization.py
+        run: python -m py_compile keller_quantization.py family_hunt.py
+
+      - name: Family hunt phase 0 (smoke)
+        run: python family_hunt.py --samples 12
 
       - name: CLI sanity
         run: python keller_quantization.py --help
