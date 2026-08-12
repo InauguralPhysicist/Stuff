@@ -58,30 +58,34 @@ noncomputable def row (r1 r2 r3 : ℝ) : E3 →L[ℝ] ℝ :=
 lemma hrow_const (k : ℝ) (p : E3) :
     HasStrictFDerivAt (fun _ : E3 => k) (row 0 0 0) p := by
   have he : (row 0 0 0 : E3 →L[ℝ] ℝ) = 0 := by
-    ext v; simp
+    refine ContinuousLinearMap.ext fun v => ?_
+    simp
   rw [he]; exact hasStrictFDerivAt_const k p
 
 lemma hrow_x (p : E3) : HasStrictFDerivAt (fun q : E3 => q.1) (row 1 0 0) p := by
   have he : (row 1 0 0 : E3 →L[ℝ] ℝ) = ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ) := by
-    ext v; simp
+    refine ContinuousLinearMap.ext fun v => ?_
+    simp
   rw [he]; exact hasStrictFDerivAt_fst
 
 lemma hrow_y (p : E3) : HasStrictFDerivAt (fun q : E3 => q.2.1) (row 0 1 0) p := by
   have h : HasStrictFDerivAt (fun q : E3 => q.2.1)
       ((ContinuousLinearMap.fst ℝ ℝ ℝ).comp (ContinuousLinearMap.snd ℝ ℝ (ℝ × ℝ))) p :=
-    hasStrictFDerivAt_fst.comp hasStrictFDerivAt_snd
+    hasStrictFDerivAt_fst.comp p hasStrictFDerivAt_snd
   have he : (row 0 1 0 : E3 →L[ℝ] ℝ)
       = (ContinuousLinearMap.fst ℝ ℝ ℝ).comp (ContinuousLinearMap.snd ℝ ℝ (ℝ × ℝ)) := by
-    ext v; simp
+    refine ContinuousLinearMap.ext fun v => ?_
+    simp
   rw [he]; exact h
 
 lemma hrow_z (p : E3) : HasStrictFDerivAt (fun q : E3 => q.2.2) (row 0 0 1) p := by
   have h : HasStrictFDerivAt (fun q : E3 => q.2.2)
       ((ContinuousLinearMap.snd ℝ ℝ ℝ).comp (ContinuousLinearMap.snd ℝ ℝ (ℝ × ℝ))) p :=
-    hasStrictFDerivAt_snd.comp hasStrictFDerivAt_snd
+    hasStrictFDerivAt_snd.comp p hasStrictFDerivAt_snd
   have he : (row 0 0 1 : E3 →L[ℝ] ℝ)
       = (ContinuousLinearMap.snd ℝ ℝ ℝ).comp (ContinuousLinearMap.snd ℝ ℝ (ℝ × ℝ)) := by
-    ext v; simp
+    refine ContinuousLinearMap.ext fun v => ?_
+    simp
   rw [he]; exact h
 
 lemma hrow_add {f g : E3 → ℝ} {a1 a2 a3 b1 b2 b3 : ℝ} {p : E3}
@@ -92,7 +96,7 @@ lemma hrow_add {f g : E3 → ℝ} {a1 a2 a3 b1 b2 b3 : ℝ} {p : E3}
       (row a1 a2 a3 + row b1 b2 b3) p := hf.add hg
   have he : (row a1 a2 a3 + row b1 b2 b3 : E3 →L[ℝ] ℝ)
       = row (a1 + b1) (a2 + b2) (a3 + b3) := by
-    ext v
+    refine ContinuousLinearMap.ext fun v => ?_
     simp only [ContinuousLinearMap.add_apply, row_apply]
     ring
   rw [← he]; exact h
@@ -106,7 +110,7 @@ lemma hrow_mul {f g : E3 → ℝ} {a1 a2 a3 b1 b2 b3 : ℝ} {p : E3}
       (f p • row b1 b2 b3 + g p • row a1 a2 a3) p := hf.mul hg
   have he : (f p • row b1 b2 b3 + g p • row a1 a2 a3 : E3 →L[ℝ] ℝ)
       = row (f p * b1 + g p * a1) (f p * b2 + g p * a2) (f p * b3 + g p * a3) := by
-    ext v
+    refine ContinuousLinearMap.ext fun v => ?_
     simp only [ContinuousLinearMap.add_apply, ContinuousLinearMap.smul_apply,
       row_apply, smul_eq_mul]
     ring
@@ -168,10 +172,10 @@ lemma hF1row (p : E3) :
   have ha4 := hrow_add ha3 hm5s5
   have ha5 := hrow_add ha4 hm6s6
   refine hrow_align ha5 ?_ ?_ ?_ ?_
-  · funext q; dsimp only; simp only [F1]; ring
-  · dsimp only; simp only [J11]; ring
-  · dsimp only; simp only [J12]; ring
-  · dsimp only; simp only [J13]; ring
+  · funext q; simp only [F1]; ring
+  · simp only [J11]; ring
+  · simp only [J12]; ring
+  · simp only [J13]; ring
 
 lemma hF2row (p : E3) :
     HasStrictFDerivAt (fun q : E3 => F2 q.1 q.2.1 q.2.2)
@@ -212,10 +216,10 @@ lemma hF2row (p : E3) :
   have ha3 := hrow_add ha2 hm4s4
   have ha4 := hrow_add ha3 hm5s5
   refine hrow_align ha4 ?_ ?_ ?_ ?_
-  · funext q; dsimp only; simp only [F2]; ring
-  · dsimp only; simp only [J21]; ring
-  · dsimp only; simp only [J22]; ring
-  · dsimp only; simp only [J23]; ring
+  · funext q; simp only [F2]; ring
+  · simp only [J21]; ring
+  · simp only [J22]; ring
+  · simp only [J23]; ring
 
 lemma hF3row (p : E3) :
     HasStrictFDerivAt (fun q : E3 => F3 q.1 q.2.1 q.2.2)
@@ -237,10 +241,10 @@ lemma hF3row (p : E3) :
   have ha0 := hrow_add hm0s0 hm1s2
   have ha1 := hrow_add ha0 hm2s3
   refine hrow_align ha1 ?_ ?_ ?_ ?_
-  · funext q; dsimp only; simp only [F3]; ring
-  · dsimp only; simp only [J31]; ring
-  · dsimp only; simp only [J32]; ring
-  · dsimp only; simp only [J33]; ring
+  · funext q; simp only [F3]; ring
+  · simp only [J31]; ring
+  · simp only [J32]; ring
+  · simp only [J33]; ring
 
 /-! ### DF as an explicit continuous linear equivalence -/
 
