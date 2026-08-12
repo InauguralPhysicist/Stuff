@@ -4,6 +4,7 @@ import KellerDepth
 import KellerExist
 import KellerComp
 import KellerTower
+import KellerOpen
 open KellerCerts
 #print axioms certificate_nine
 #print axioms certificate_three
@@ -38,3 +39,5 @@ open KellerCerts
 #print axioms KellerTower.sibling_lift
 #print axioms KellerTower.tower_eleven
 #print axioms KellerTower.fiber_nonempty
+#print axioms KellerOpen.fmap_nhds
+#print axioms KellerOpen.tower_eleven_nhds
