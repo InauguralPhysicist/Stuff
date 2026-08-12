@@ -96,6 +96,10 @@ jobs:
         # the wall regression targets, and the phase-2 calibration gate
         run: python family_hunt.py --samples 12 --phase2 8 --phase2-wide 4
 
+      - name: Family pair affine-inequivalence certificate
+        # exact decision, both directions; exits nonzero unless excluded
+        run: python family_equiv.py
+
       - name: CLI sanity
         run: python keller_quantization.py --help
 
