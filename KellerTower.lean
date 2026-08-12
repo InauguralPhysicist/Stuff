@@ -42,7 +42,7 @@ lemma cStarEval : ∀ x : ℝ,
     CStar x = Lpoly yStar1 yStar2 yStar3 * x^3 + Bpoly yStar2 yStar3 * x - 2 * yStar3 := by
   intro x
   simp only [CStar, Lpoly, Bpoly, yStar1, yStar2, yStar3]
-  norm_num
+  ring
 
 /-- K(y*) ≠ 0: the shape-lemma chart is available at y*. -/
 lemma kStarNe : Kpoly yStar1 yStar2 yStar3 ≠ 0 := by
@@ -138,9 +138,9 @@ private lemma cubic_real_root_pos (a b c : ℝ) (ha : 0 < a) :
   have e2 : (a*T)*T ≤ ((a*T)*T)*T :=
     le_mul_of_one_le_right (mul_pos (mul_pos ha hTpos) hTpos).le hT1
   have e3 : (-|b|)*T ≤ b*T := mul_le_mul_of_nonneg_right (neg_abs_le b) hTpos.le
-  have e3' : b*(-T) ≤ |b|*T := by
+  have e3' : b*(-T) ≤ |b| * T := by
     nlinarith [mul_nonneg (by linarith [neg_abs_le b] : (0:ℝ) ≤ |b| + b) hTpos.le]
-  have e4 : |c| ≤ |c|*T := le_mul_of_one_le_right (abs_nonneg c) hT1
+  have e4 : |c| ≤ |c| * T := le_mul_of_one_le_right (abs_nonneg c) hT1
   have hfT : 0 < a*T^3 + b*T + c := by
     nlinarith [le_abs_self c, neg_abs_le c]
   have hfnT : a*(-T)^3 + b*(-T) + c < 0 := by
@@ -155,7 +155,7 @@ private lemma cubic_real_root_pos (a b c : ℝ) (ha : 0 < a) :
 /-- A depressed cubic with nonzero leading coefficient has a real root. -/
 lemma cubic_real_root (a b c : ℝ) (ha : a ≠ 0) :
     ∃ x : ℝ, a*x^3 + b*x + c = 0 := by
-  rcases ha.lt_or_lt with hneg | hpos
+  rcases lt_or_gt_of_ne ha with hneg | hpos
   · obtain ⟨x, hx⟩ := cubic_real_root_pos (-a) (-b) (-c) (by linarith)
     exact ⟨x, by linarith⟩
   · exact cubic_real_root_pos a b c hpos
