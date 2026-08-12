@@ -39,7 +39,7 @@ The full write-up is [`keller_quantization_report.md`](keller_quantization_repor
 | `KellerDepth.lean` | Depth layer — second story of the n₂ = 9 certificate (three roots over each first-story preimage) |
 | `KellerExist.lean` | Existence layer — global existence lemmas in memory-bounded split-chain form |
 | `KellerComp.lean` | Composition layer — `comp_nine`: F ∘ F has exactly nine preimages over the n₂ = 9 point |
-| `KellerTower.lean` | Tower layer — first story of n₃ ≥ 11 at y\* = F(z\*), and `tower_nine`: n₃(y\*) ≥ 9 |
+| `KellerTower.lean` | Tower layer — `tower_eleven`: n₃(y\*) ≥ 11 at y\* = F(z\*), machine-checked end to end |
 | `AxiomCheck.lean` | `#print axioms` audit of every certificate |
 | `tower4_certificate.py` | Exact F⁴ certificate: n₄ ≥ 13 at Y = F(F(z\*)) |
 | `friedrichs_levels.html` | Figure: Friedrichs spectrum of the transformed oscillator (Part III) |
@@ -111,7 +111,7 @@ release.
 | Quoted fact | Status |
 |---|---|
 | n_k = fiber count of F^k (the operator bridge, §I.1/§IV) | Deliberate trust boundary — verified in the report (five adversarial review rounds), not formalized |
-| n₃(y\*) ≥ 11 (§IV.2) | Exact in Python (`tower --exact3`, CI-run). Lean: first story + the nine-point floor done (`KellerTower`); the sibling +1 + 1 remaining |
+| n₃(y\*) ≥ 11 (§IV.2) | **Done** — machine-checked in Lean (`KellerTower.tower_eleven`), independently exact in Python (`tower --exact3`, CI-run) |
 | n(y) ≥ 1 off the empty-fiber curve (§II.3) | Load-bearing for the F⁴ chain; report-verified, not formalized |
 | max ess-range(n₂) = 9 (§IV.2) | Report-verified; the Lean certificates pin the attained values 3, 5, 7, 9 exactly |
 | sympy exact arithmetic, mathlib oleans, the Lean kernel | Toolchain trust base |
