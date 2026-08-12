@@ -1,8 +1,10 @@
 # The Alpöge Keller Map as a Quantum System
 
 Independent verification and new results for the note *"A Non-Regular
-Heisenberg System from the Alpöge Keller Map"*, together with a
-machine-checked Lean 4 layer for the Part IV level-set certificates.
+Heisenberg System from the Alpöge Keller Map"*, together with
+machine-checked Lean 4 layers for Part IV — the level-set certificates,
+fiber determination at every certified point, and the full n₂ = 9
+tower step assembled end to end.
 
 The full write-up is [`keller_quantization_report.md`](keller_quantization_report.md)
 (revision 9). Headline outcomes:
@@ -19,6 +21,12 @@ The full write-up is [`keller_quantization_report.md`](keller_quantization_repor
 - **Part IV** — the tower F, F², F³ separated exactly:
   spec(C₂\*C₂) = {1, 3, 5, 7, 9} with exact rational certificates, each one
   machine-checked in Lean.
+- **Part IV, formalized end to end** — the bridge/depth/existence/composition
+  layers prove fiber determination at all four certified points and assemble
+  `comp_nine`: F ∘ F has exactly nine real preimages over the n₂ = 9 point,
+  machine-checking the tower step 9 = 3 × 3 that report §IV.2 quotes.
+- **F⁴** — the tower extended one story: exact certificate n₄ ≥ 13, so
+  S_{F⁴} is inequivalent to S_{F²} and S_F (F⁴ vs F³ remains open).
 
 ## Repository contents
 
@@ -27,7 +35,12 @@ The full write-up is [`keller_quantization_report.md`](keller_quantization_repor
 | `keller_quantization_report.md` | The report (revision 9) |
 | `keller_quantization.py` | Companion code — eight subcommands reproduce every number in the report |
 | `KellerCerts.lean` | Lean 4 certificates for the Part IV level sets (n₂ = 3, 5, 7, 9) |
+| `KellerBridge.lean` | Bridge layer — global fiber-cubic/shape identities, and fiber determination at the four certified points |
+| `KellerDepth.lean` | Depth layer — second story of the n₂ = 9 certificate (three roots over each first-story preimage) |
+| `KellerExist.lean` | Existence layer — global existence lemmas in memory-bounded split-chain form |
+| `KellerComp.lean` | Composition layer — `comp_nine`: F ∘ F has exactly nine preimages over the n₂ = 9 point |
 | `AxiomCheck.lean` | `#print axioms` audit of every certificate |
+| `tower4_certificate.py` | Exact F⁴ certificate: n₄ ≥ 13 at Y = F(F(z\*)) |
 | `friedrichs_levels.html` | Figure: Friedrichs spectrum of the transformed oscillator (Part III) |
 | `source-note/` | The verified note and its companion scripts, archived with matching SHA-256 (see its README) |
 | `lakefile.toml`, `lean-toolchain` | Lake build config, pinned to Lean 4 / mathlib v4.32.0 |
@@ -40,14 +53,21 @@ by `lean-toolchain`.
 ```sh
 lake update            # resolve mathlib (first run only; commit lake-manifest.json)
 lake exe cache get     # download prebuilt mathlib oleans (highly recommended)
-lake build KellerCerts # check the certificates
+lake build KellerCerts KellerBridge KellerDepth KellerExist KellerComp
+                       # check all certificate layers
 lake build AxiomCheck  # print the axioms each certificate depends on
 ```
 
 The axiom check should report only the three standard axioms
 (`propext`, `Classical.choice`, `Quot.sound`) — no `sorry`.
 
-CI runs both builds on every push (see `.github/workflows/ci.yml`).
+The existence and composition layers elaborate large ring identities;
+set `LEAN_NUM_THREADS=1` (as CI does) to keep peak memory bounded —
+concurrent heavy ring checks stack their peaks and can OOM a 16 GB
+machine.
+
+CI builds every layer and enforces the axiom allowlist on every push
+(see `.github/workflows/ci.yml`).
 
 ## Python verification suite
 
@@ -72,6 +92,13 @@ Subcommands map to the report as follows:
 Defaults are sized for a quick run; the published figures used larger
 parameters noted in each subcommand's `--help` (e.g. the direction census
 used `--dirs 400000` over ten seeds, the no-go Monte Carlo 4×10⁷ samples).
+
+The F⁴ extension is a standalone script (everything exact over ℚ or
+ℚ[u]/Qr; CI runs it on every push):
+
+```sh
+python tower4_certificate.py   # exact certificate n₄ ≥ 13
+```
 
 ## Provenance
 
