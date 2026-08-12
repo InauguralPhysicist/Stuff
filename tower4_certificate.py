@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Exact certificate: n4 >= 13 at Y = F(F(z*)) -- the tower, one story up.
 
-Extends report section IV (keller_quantization_report.md, revision 9) from
+Extends report section IV (keller_quantization_report.md, revision 10) from
 F^3 to F^4: ess-range(n4) contains a value >= 13 > 9 = max ess-range(n2),
 so S_{F^4} is inequivalent to S_{F^2} and S_F.  (F^4 vs F^3 remains open:
 both essential ranges contain values >= 11.)
