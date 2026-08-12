@@ -51,18 +51,35 @@ for both members). The C != 0 pipeline had been *discarding* the wall
 was right at those points. Wall counts are real data for the separation
 hunt and are now measured, not thrown away.
 
-Findings (2026-08-12, corrected): certified n1 value sets off the wall
-are {0, 2, 4} for BOTH members (N = 400 exact); attained wall values are
-{1, 3}, identical for both members at every audited wall target.
-Through n1 the multiplicity invariant does not separate the same-degree
-pair -- the completeness question is live. Next: n2 (see phase 2), then
-the extreme n2 strata / wall-gluing data.
+Phase 2 (numeric n2, committed driver -- run with --phase2 400
+--phase2-wide 86): n2(y) = sum of n1 over the first-story preimages;
+each story counts real E-roots at 60-digit precision under relative
+thresholds (RTOL_ACCEPT/RTOL_REJECT), and ANY ambiguous margin --
+root classification, pairwise separation (the numeric analog of the
+squarefreeness guard), a guard denominator, or a second-story wall
+coordinate -- excludes the whole target rather than guessing. A
+story-1 calibration gate checks the numeric count against n1_exact
+on shared targets before the sweep counts anything.
+
+Findings (2026-08-12, corrected and re-measured with this driver):
+certified n1 value sets off the wall are {0, 2, 4} for BOTH members
+(N = 400 exact); attained wall values are {1, 3}, identical for both
+members at every audited wall target. Numeric n2 attains
+{0, 2, 4, 6, 8, 10, 12} for BOTH members (486 targets incl. wide
+log-scaled, 5 member-cases excluded as ambiguous, calibration 40/40);
+neither member has reached 14 or 16. Pointwise counts at a shared
+target differ freely between the two maps -- the invariant is the
+attained VALUE SET (essential range, up to the moves) -- and through
+n2 the value sets do not separate the same-degree pair: the
+completeness question is live. Next: certify max ess-range(n2) per
+member (hunt 14/16 near-critical), then n3 or the wall-gluing data.
 """
 import argparse
 import random
 import sys
 import time
 
+import mpmath as mp
 import sympy as sp
 from sympy import Rational as Q
 
@@ -249,10 +266,172 @@ def n1_exact(M, target):
     return sp.count_roots(E)
 
 
+# Phase 2: numeric n2 (fiber count of the member composed with itself).
+# n2(y) = sum over first-story preimages s of n1(s); each story is the
+# real-root count of the story's E, evaluated at 60-digit precision with
+# RELATIVE thresholds. Any ambiguous margin (a root's imaginary part or
+# pairwise separation, a guard denominator, a second-story wall
+# coordinate falling between the accept and reject thresholds) excludes
+# the whole target (returns None) -- ambiguity is never guessed.
+RTOL_ACCEPT = mp.mpf('1e-40')
+RTOL_REJECT = mp.mpf('1e-20')
+
+
+def _mp_kit(M):
+    """Per-member mpf constants for phase 2 (cached on the kit)."""
+    if '_mp' not in M:
+        tompf = lambda q: mp.mpf(int(q.p)) / int(q.q)
+        M['_mp'] = dict(
+            cH=[tompf(c) for c in sp.Poly(M['H'], w).all_coeffs()],
+            cp=[tompf(c) for c in sp.Poly(M['p'], w).all_coeffs()],
+            Hp0=tompf(M['Hp0']), a=tompf(M['a']))
+    return M['_mp']
+
+
+def _mp_real_roots(coeffs):
+    """Real roots of a polynomial by mp.polyroots, with relative-threshold
+    classification. None if any root or pairwise separation is ambiguous
+    (this also excludes near-double roots -- the numeric analog of the
+    exact pipeline's squarefreeness guard)."""
+    roots = mp.polyroots(coeffs, maxsteps=200, extraprec=120)
+    real = []
+    for r in roots:
+        s = 1 + abs(r)
+        if abs(mp.im(r)) <= RTOL_ACCEPT * s:
+            real.append(mp.re(r))
+        elif abs(mp.im(r)) <= RTOL_REJECT * s:
+            return None
+    for i in range(len(real)):
+        for j in range(i + 1, len(real)):
+            if abs(real[i] - real[j]) <= RTOL_REJECT * (1 + abs(real[i])):
+                return None
+    return real
+
+
+def _story_roots(K, Av, Bv, Cv):
+    """Real E-roots with guard margins at a numeric target, or None."""
+    cE = [-c for c in K['cH']]
+    cE[-2] += K['Hp0'] + Bv*Cv
+    cE[-1] -= Av*Cv**2
+    real = _mp_real_roots(cE)
+    if real is None:
+        return None
+    kept = []
+    for w1 in real:
+        g = Bv*Cv - mp.polyval(K['cp'], w1)
+        if abs(g) <= RTOL_REJECT * (1 + abs(Bv*Cv) + abs(w1)):
+            return None          # too close to the escape locus
+        kept.append((w1, g))
+    return kept
+
+
+def n2_numeric(M, target, dps=60):
+    """Numeric n2 at a rational target with C != 0; None on any
+    ambiguous margin. Story 1 lifts each root through the chart; story 2
+    counts the real E-roots over each lifted preimage."""
+    Av, Bv, Cv = target
+    if Cv == 0:
+        return None
+    K = _mp_kit(M)
+    with mp.workdps(dps):
+        tompf = lambda q: mp.mpf(int(q.p)) / int(q.q)
+        Av, Bv, Cv = tompf(Q(Av)), tompf(Q(Bv)), tompf(Q(Cv))
+        story1 = _story_roots(K, Av, Bv, Cv)
+        if story1 is None:
+            return None
+        total = 0
+        for w1, g in story1:
+            xv = Cv / g
+            uv = w1 * xv / Cv
+            yv = (uv - 1) / xv
+            zv = (Cv/xv - 1 - K['a']*(uv - 1)) / xv**2
+            if abs(zv) <= RTOL_REJECT * (1 + abs(xv) + abs(yv)):
+                return None      # second-story target on/near the wall
+            story2 = _story_roots(K, xv, yv, zv)
+            if story2 is None:
+                return None
+            total += len(story2)
+        return total
+
+
+def _phase2_targets(n_std, n_wide, seed):
+    random.seed(seed)
+    tgts = []
+    while len(tgts) < n_std:
+        scale = random.choice([1, 1, 2, 5, 10])
+        pt = tuple(Q(random.randint(-6*scale, 6*scale), random.randint(1, 8))
+                   for _ in range(3))
+        if pt[2] != 0:
+            tgts.append(pt)
+    while len(tgts) < n_std + n_wide:
+        pt = tuple(Q(random.randint(-6, 6), random.randint(1, 8))
+                   * Q(10)**random.randint(-3, 3) for _ in range(3))
+        if pt[2] != 0:
+            tgts.append(pt)
+    return tgts
+
+
+def phase2(A, B, args):
+    """Numeric n2 sweep over standard + wide log-scaled targets, with an
+    exact-vs-numeric story-1 calibration gate."""
+    ok = True
+    ncal = 0
+    for pt in _phase2_targets(20, 0, args.seed + 1):
+        for M in (A, B):
+            c_exact = n1_exact(M, pt)
+            s1 = None
+            with mp.workdps(args.dps):
+                tompf = lambda q: mp.mpf(int(q.p)) / int(q.q)
+                s1 = _story_roots(_mp_kit(M), *(tompf(v) for v in pt))
+            if c_exact is not None and s1 is not None:
+                ncal += 1
+                ok &= (len(s1) == c_exact)
+    print("story-1 calibration vs n1_exact (%d comparisons): %s"
+          % (ncal, "agree" if ok else "DISAGREE"))
+
+    hist = {'A': {}, 'B': {}}
+    excluded = 0
+    t0 = time.time()
+    tgts = _phase2_targets(args.phase2, args.phase2_wide, args.seed + 2)
+    for pt in tgts:
+        for name, M in (('A', A), ('B', B)):
+            c = n2_numeric(M, pt, dps=args.dps)
+            if c is None:
+                excluded += 1
+            else:
+                hist[name][c] = hist[name].get(c, 0) + 1
+    print("numeric n2 histograms (%d targets, %d member-cases excluded "
+          "as ambiguous) [%ds]:" % (len(tgts), excluded, time.time() - t0))
+    print("  A:", dict(sorted(hist['A'].items())))
+    print("  B:", dict(sorted(hist['B'].items())))
+    # Pointwise values at a shared target differ freely between two
+    # different maps; the invariant is the attained VALUE SET (the
+    # essential range, up to the moves). Separation evidence = a value
+    # one member attains and the other provably cannot.
+    setA, setB = sorted(hist['A']), sorted(hist['B'])
+    print("attained n2 sets: A = %s, B = %s" % (setA, setB))
+    if setA != setB:
+        print("  N2 VALUE-SET DIFFERENCE (separation candidate -- "
+              "certify before believing): %s"
+              % sorted(set(setA) ^ set(setB)))
+    odd = [v for v in list(hist['A']) + list(hist['B']) if v % 2]
+    ok &= not odd
+    print("no odd n2 values (each story is even off ambiguity):", not odd)
+    return ok
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--samples', type=int, default=80)
     ap.add_argument('--seed', type=int, default=7)
+    ap.add_argument('--phase2', type=int, default=0, metavar='N',
+                    help='numeric n2 sweep over N standard targets '
+                         '(published run: 400)')
+    ap.add_argument('--phase2-wide', type=int, default=0, metavar='M',
+                    help='additional wide log-scaled n2 targets '
+                         '(published run: 86)')
+    ap.add_argument('--dps', type=int, default=60,
+                    help='mpmath working precision for phase 2')
     args = ap.parse_args()
     ok = True
 
@@ -298,7 +477,8 @@ def main():
                     hist[name][c] = hist[name].get(c, 0) + 1
         if len(counts) == 2 and counts['A'] != counts['B']:
             wall_agree = False
-            print("  WALL SEPARATION CANDIDATE at %s: A=%d B=%d"
+            print("  wall counts differ at %s: A=%d B=%d (pointwise "
+                  "observation; the invariant is the value set)"
                   % (pt, counts['A'], counts['B']))
     print("certified n1 histograms, off-wall (C != 0) [%ds]:"
           % (time.time() - t0))
@@ -315,7 +495,11 @@ def main():
     print("no odd values off-wall (theorem: guard = E', E squarefree):",
           not odd)
 
-    print("\nPHASE 0 %s" % ("COMPLETE" if ok else "FAILED"))
+    if args.phase2 or args.phase2_wide:
+        print()
+        ok &= phase2(A, B, args)
+
+    print("\nFAMILY HUNT %s" % ("COMPLETE" if ok else "FAILED"))
     return 0 if ok else 1
 
 
