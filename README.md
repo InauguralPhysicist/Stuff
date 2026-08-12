@@ -7,7 +7,7 @@ fiber determination at every certified point, and the full n₂ = 9
 tower step assembled end to end.
 
 The full write-up is [`keller_quantization_report.md`](keller_quantization_report.md)
-(revision 9). Headline outcomes:
+(revision 10). Headline outcomes:
 
 - **Part I** — every checkable claim of the source note verified, with one
   error found and corrected (§10's characterization of boundary-reaching
@@ -32,7 +32,7 @@ The full write-up is [`keller_quantization_report.md`](keller_quantization_repor
 
 | File | What it is |
 |---|---|
-| `keller_quantization_report.md` | The report (revision 9) |
+| `keller_quantization_report.md` | The report (revision 10) |
 | `keller_quantization.py` | Companion code — eight subcommands reproduce every number in the report |
 | `KellerCerts.lean` | Lean 4 certificates for the Part IV level sets (n₂ = 3, 5, 7, 9) |
 | `KellerBridge.lean` | Bridge layer — global fiber-cubic/shape identities, and fiber determination at the four certified points |
