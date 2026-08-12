@@ -444,8 +444,11 @@ lemma sibling_lift (t : ℝ) (hC : CStar t = 0) (hgt : ((-1643 : ℝ)/50) < t) :
     by rw [hv1, hv2, hv3]; exact hFw2,
     by rw [hv1, hv2, hv3]; exact hFw3⟩
 
-/-- **n₃(y*) ≥ 11**: the nine comp_nine points plus one F²-preimage over
-each certificate_star sibling — the exact3 headline, machine-checked. -/
+/-- **n₃(y*) ≥ 11 pointwise**: the nine comp_nine points plus one
+F²-preimage over each certificate_star sibling — the fiber-count part of
+the exact3 headline.  (The "on an open neighborhood" clause — IFT at
+nondegenerate preimages — remains report-verified prose; see the README
+trust ledger.) -/
 theorem tower_eleven :
     ∃ S : Finset (ℝ × ℝ × ℝ), S.card = 11 ∧
       ∀ a b c : ℝ, (a, b, c) ∈ S →
