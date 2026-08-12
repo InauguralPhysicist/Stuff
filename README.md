@@ -39,7 +39,8 @@ The full write-up is [`keller_quantization_report.md`](keller_quantization_repor
 | `KellerDepth.lean` | Depth layer — second story of the n₂ = 9 certificate (three roots over each first-story preimage) |
 | `KellerExist.lean` | Existence layer — global existence lemmas in memory-bounded split-chain form |
 | `KellerComp.lean` | Composition layer — `comp_nine`: F ∘ F has exactly nine preimages over the n₂ = 9 point |
-| `KellerTower.lean` | Tower layer — `tower_eleven`: eleven distinct F³-preimages of y\* = F(z\*), so n₃(y\*) ≥ 11 pointwise (see the trust ledger for the operator bridge and the measure step) |
+| `KellerTower.lean` | Tower layer — `tower_eleven`: eleven distinct F³-preimages of y\* = F(z\*), so n₃(y\*) ≥ 11 pointwise |
+| `KellerOpen.lean` | Openness layer — `tower_eleven_nhds`: the eleven preimages persist on a neighborhood of y\* (explicit inverse Jacobian, det DF ≡ −2, inverse function theorem) |
 | `AxiomCheck.lean` | `#print axioms` audit of every certificate |
 | `tower4_certificate.py` | Exact F⁴ certificate: n₄ ≥ 13 at Y = F(F(z\*)) |
 | `friedrichs_levels.html` | Figure: Friedrichs spectrum of the transformed oscillator (Part III) |
@@ -112,7 +113,7 @@ release.
 |---|---|
 | n_k = fiber count of F^k (the operator bridge, §I.1/§IV) | Deliberate trust boundary — verified in the report (five adversarial review rounds), not formalized |
 | n₃(y\*) ≥ 11 pointwise (§IV.2) | **Done** — machine-checked in Lean (`KellerTower.tower_eleven`: eleven distinct F³-preimages), independently exact in Python (`tower --exact3`, CI-run) |
-| n₃ ≥ 11 propagates to a positive-measure set (§IV.2, "on an open neighborhood") | IFT at nondegenerate preimages, det DF³ ≡ −8; report-verified prose — not formalized, and the essential-range separation consumes this step |
+| n₃ ≥ 11 propagates to a positive-measure set (§IV.2, "on an open neighborhood") | **Done** — machine-checked in Lean (`KellerOpen.tower_eleven_nhds`): the inverse Jacobian of F is exhibited explicitly (det DF ≡ −2), F³ maps neighborhoods to neighborhoods, and every y near y\* has eleven distinct F³-preimages |
 | n(y) ≥ 1 off the empty-fiber curve (§II.3) | Main case (L ≠ 0 ∧ K ≠ 0) formalized as `KellerTower.fiber_nonempty`; the degenerate off-curve strata (L = 0 or K = 0) remain report-verified |
 | max ess-range(n₂) = 9 (§IV.2) | Report-verified; the Lean certificates pin the attained values 3, 5, 7, 9 exactly |
 | sympy exact arithmetic, mathlib oleans, the Lean kernel | Toolchain trust base |

@@ -50,6 +50,9 @@ jobs:
       - name: Build tower layer
         run: lake build KellerTower
 
+      - name: Build openness layer
+        run: lake build KellerOpen
+
       - name: Audit axioms
         run: |
           # A masked lake failure (OOM kill, stale #print target) must not
