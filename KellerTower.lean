@@ -172,6 +172,23 @@ lemma cubic_real_root (a b c : ℝ) (ha : a ≠ 0) :
     exact ⟨x, by linarith⟩
   · exact cubic_real_root_pos a b c hpos
 
+/-- Report §II.3, main case: every point with L ≠ 0 and K ≠ 0 has an
+F-preimage — the fiber cubic is a genuine cubic, so it has a real root,
+and the shape chart lifts it. -/
+theorem fiber_nonempty (u v w : ℝ) (hL : Lpoly u v w ≠ 0) (hK : Kpoly u v w ≠ 0) :
+    ∃ a b c : ℝ, F1 a b c = u ∧ F2 a b c = v ∧ F3 a b c = w := by
+  obtain ⟨x, hx⟩ := cubic_real_root (Lpoly u v w) (Bpoly v w) (-(2*w)) hL
+  have hC : Lpoly u v w * x^3 + Bpoly v w * x - 2*w = 0 := by linarith
+  set b := G2side x u v w / (2 * Kpoly u v w) with hbdef
+  set c := G3side x u v w / (8 * Kpoly u v w) with hcdef
+  have hb : 2 * Kpoly u v w * b = G2side x u v w := by
+    rw [hbdef, mul_comm, div_mul_cancel₀ _ (mul_ne_zero two_ne_zero hK)]
+  have hc : 8 * Kpoly u v w * c = G3side x u v w := by
+    rw [hcdef, mul_comm, div_mul_cancel₀ _ (mul_ne_zero (by norm_num) hK)]
+  exact ⟨x, b, c, exists_glob1 x u v w b c hb hc hC hK,
+    exists_glob2 x u v w b c hb hc hC hK,
+    exists_glob3 x u v w b c hb hc hC hK⟩
+
 
 /-! ### Phase 2: the sibling +1 + 1 — certificates mod the sibling quadratic QrP -/
 

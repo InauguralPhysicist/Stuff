@@ -113,7 +113,7 @@ release.
 | n_k = fiber count of F^k (the operator bridge, §I.1/§IV) | Deliberate trust boundary — verified in the report (five adversarial review rounds), not formalized |
 | n₃(y\*) ≥ 11 pointwise (§IV.2) | **Done** — machine-checked in Lean (`KellerTower.tower_eleven`: eleven distinct F³-preimages), independently exact in Python (`tower --exact3`, CI-run) |
 | n₃ ≥ 11 propagates to a positive-measure set (§IV.2, "on an open neighborhood") | IFT at nondegenerate preimages, det DF³ ≡ −8; report-verified prose — not formalized, and the essential-range separation consumes this step |
-| n(y) ≥ 1 off the empty-fiber curve (§II.3) | Load-bearing for the F⁴ chain; report-verified, not formalized |
+| n(y) ≥ 1 off the empty-fiber curve (§II.3) | Main case (L ≠ 0 ∧ K ≠ 0) formalized as `KellerTower.fiber_nonempty`; the degenerate off-curve strata (L = 0 or K = 0) remain report-verified |
 | max ess-range(n₂) = 9 (§IV.2) | Report-verified; the Lean certificates pin the attained values 3, 5, 7, 9 exactly |
 | sympy exact arithmetic, mathlib oleans, the Lean kernel | Toolchain trust base |
 
