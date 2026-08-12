@@ -15,8 +15,10 @@ Certificate structure (everything exact over Q or Q[u]/Qr):
   0. L(Y) < 0 and K(Y) != 0, so Y has exactly three real preimages:
      y* (a root of the fiber cubic at Y, verified exactly) and two real
      siblings z'(u), z''(u), u the roots of the residual quadratic Qr
-     (discriminant > 0 exactly); sibling coordinates from the shape-lemma
-     chart at Y (lex Groebner basis, denominators nonzero since K(Y) != 0).
+     (discriminant > 0 exactly); disc(CY) > 0 exactly, so all three
+     preimages are pairwise distinct (y* is not a sibling and the counts
+     in step 4 add); sibling coordinates from the shape-lemma chart at Y
+     (lex Groebner basis, denominators nonzero since K(Y) != 0).
   1. gcd tests mod Qr: L, K, B all nonzero at both siblings.  So each
      sibling is off the wall and off the empty-fiber curve, its fiber cubic
      is a genuine cubic (odd degree => a real root exists), and the shape
@@ -31,16 +33,18 @@ Certificate structure (everything exact over Q or Q[u]/Qr):
   3. Same elimination against F(F(c(s))): no such w lies on F(curve).
      Hence no preimage v of any such w is on the curve (else w = F(v)
      would be in F(curve)), so n(v) >= 1 and n2(w) >= 1.
-  4. Assembly: n3(z') >= 1 and n3(z'') >= 1, so
+  4. Assembly: n3(z') >= 1 and n3(z'') >= 1, and the three preimages are
+     distinct (step 0), so
         n4(Y) = n3(y*) + n3(z') + n3(z'') >= 11 + 1 + 1 = 13,
-     and every inequality is strict/nondegenerate (det DF^4 = 16 != 0), so
-     the bound holds on an open neighborhood of Y.
+     and det DF == -2 identically (checked symbolically, so det DF^4 = 16
+     everywhere), so the bound holds on an open neighborhood of Y.
 
 Dependencies quoted from the report (same ones its own --exact3 uses):
 n3(y*) >= 11 (IV.2), n(y) >= 1 off the curve (II.3), the fiber-cubic /
 shape-lemma bridge (I.1, II.3).
 
-Run:  python3 tower4_certificate.py           (exact certificate, ~3 min)
+Run:  python3 tower4_certificate.py           (exact certificate, seconds to
+      a few minutes depending on the machine)
       python3 tower4_certificate.py --corroborate   (adds 150-digit numeric
       chains; thresholds are RELATIVE -- the siblings live at coordinates up
       to ~1e189, where any absolute threshold silently rejects everything,
@@ -60,7 +64,11 @@ F = [(1 + x1*x2)**3*x3 + x2**2*(1 + x1*x2)*(4 + 3*x1*x2),
 
 def Fv(p):
     s = dict(zip((x1, x2, x3), p))
-    return tuple(sp.nsimplify(sp.together(f.subs(s))) for f in F)
+    out = tuple(sp.together(f.subs(s)) for f in F)
+    for v in out:
+        if v.atoms(sp.Float):
+            raise ValueError("float leaked into the exact path: %s" % v)
+    return out
 
 
 L = lambda y: 27*y[0]**2*y[2]**2 - 18*y[0]*y[1]*y[2] + 16*y[0] + y[1]**3*y[2] - y[1]**2
@@ -88,16 +96,22 @@ def main():
         and Qr.discriminant() > 0
     ok &= c2
     print("0c. residual quadratic exact with disc > 0 (two real siblings):", c2)
+    c3 = CY.discriminant() > 0
+    ok &= c3
+    print("0d. disc(CY) > 0 (all three preimages distinct; y* is not a "
+          "sibling, so the counts add):", c3)
 
     # ---- sibling coordinates from the shape lemma at Y ----
     G = sp.groebner([f - v for f, v in zip(F, Y)], x3, x2, x1, order='lex')
     uni = [g for g in G.exprs if g.free_symbols <= {x1}]
-    assert len(uni) == 1
+    if len(uni) != 1:
+        raise ValueError("Groebner basis must have exactly one univariate "
+                         "element, got %d" % len(uni))
     sol = sp.solve([g for g in G.exprs if g not in uni], [x2, x3], dict=True)[0]
     Z = [u, sp.together(sol[x2]).subs(x1, u), sp.together(sol[x3]).subs(x1, u)]
     for comp in Z[1:]:
-        assert not sp.fraction(sp.together(comp))[1].has(u), \
-            "shape-lemma chart denominator must be u-free"
+        if sp.fraction(sp.together(comp))[1].has(u):
+            raise ValueError("shape-lemma chart denominator must be u-free")
     QrU = sp.Poly(Qr.as_expr().subs(x1, u), u)
 
     def red(expr):
@@ -121,7 +135,9 @@ def main():
             nz, dz = sp.fraction(sp.together(Z[i]))
             e = sp.expand(n1*dz - d1*sp.rem(sp.Poly(sp.expand(nz), u), QrU, u).as_expr())
             ep = sp.Poly(e, u)
-            assert ep.degree() <= 1, "cleared equation must be linear in u"
+            if ep.degree() > 1:
+                raise ValueError("cleared equation must be linear in u after "
+                                 "reduction mod Qr, got degree %d" % ep.degree())
             eqs.append(ep)
         ab = [(e.coeff_monomial(1), e.coeff_monomial(u)) for e in eqs]
         a1, b1 = ab[0]
@@ -132,8 +148,11 @@ def main():
         degen_branch = [sp.expand(b1), sp.expand(a1)]
 
         def trivial(polys):
-            g = reduce(lambda a, b: sp.gcd(a, b, sg), polys)
-            _, factors = sp.factor_list(sp.expand(g), sg)
+            g = sp.expand(reduce(lambda a, b: sp.gcd(a, b, sg), polys))
+            if g == 0:
+                raise ValueError("elimination system vanished identically -- "
+                                 "the gcd test would pass vacuously")
+            _, factors = sp.factor_list(g, sg)
             return all(base == sg for base, _ in factors)
         return trivial(main_branch), trivial(degen_branch)
 
@@ -144,6 +163,13 @@ def main():
     t, tb = eliminate(Fv(Fc))
     ok &= t and tb
     print("3.  no w over either sibling on F(curve):", t, "| degenerate branch:", tb)
+
+    # ---- 4. nondegeneracy: det DF = -2 identically, so det DF^4 = 16 ----
+    J = sp.Matrix([[sp.diff(f, v) for v in (x1, x2, x3)] for f in F])
+    c4 = sp.expand(J.det()) == -2
+    ok &= c4
+    print("4.  det DF == -2 identically (det DF^4 = 16, bound holds on an "
+          "open neighborhood):", c4)
 
     print("\nCERTIFICATE " + ("COMPLETE: n4(Y) >= 13 on an open set -- "
           "S_{F^4} inequivalent to S_{F^2} and S_F" if ok else "FAILED"))

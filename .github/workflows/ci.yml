@@ -9,6 +9,10 @@ jobs:
   lean:
     name: Lean certificates
     runs-on: ubuntu-latest
+    env:
+      # Serialize elaboration: concurrent heavy ring checks stack their
+      # memory peaks and OOM the 16 GB runner (exit 143).
+      LEAN_NUM_THREADS: 1
     steps:
       - uses: actions/checkout@v4
 
@@ -17,8 +21,13 @@ jobs:
           curl -sSf https://elan.lean-lang.org/elan-init.sh | sh -s -- -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
-      - name: Resolve dependencies
-        run: lake update
+      - name: Cache Lake artifacts
+        uses: actions/cache@v4
+        with:
+          path: .lake
+          key: lake-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}-${{ hashFiles('*.lean', 'lakefile.toml') }}
+          restore-keys: |
+            lake-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}-
 
       - name: Fetch mathlib cache
         run: lake exe cache get
@@ -29,18 +38,35 @@ jobs:
       - name: Build bridge layer
         run: lake build KellerBridge
 
+      - name: Build depth layer
+        run: lake build KellerDepth
+
+      - name: Build existence layer
+        run: lake build KellerExist
+
+      - name: Build composition layer
+        run: lake build KellerComp
+
       - name: Audit axioms
         run: |
+          # A masked lake failure (OOM kill, stale #print target) must not
+          # pass on a partial log: fail on lake's own exit code, and demand
+          # one well-formed report line per #print in AxiomCheck.lean.
+          set -o pipefail
           lake build AxiomCheck | tee axiom_audit.log
-          grep -q "depends on axioms" axiom_audit.log \
-            || { echo "::error::no axiom report in build output"; exit 1; }
+          expected=$(grep -c '^#print axioms' AxiomCheck.lean)
+          audited=$(grep -cE "depends on axioms|does not depend on any axioms" axiom_audit.log || true)
+          if [ "$audited" -ne "$expected" ]; then
+            echo "::error::$audited axiom reports in build output, expected $expected"; exit 1
+          fi
           if grep -n "sorry" axiom_audit.log; then
             echo "::error::sorry detected in audited theorems"; exit 1
           fi
+          # Full-line match so a wrapped or malformed axiom list fails
+          # instead of being silently skipped by a bracket extraction.
           if grep "depends on axioms" axiom_audit.log \
-              | grep -oE '\[[^]]*\]' | tr -d '[] ' | tr ',' '\n' \
-              | grep -vxE 'propext|Classical\.choice|Quot\.sound'; then
-            echo "::error::unexpected axiom detected"; exit 1
+              | grep -vE "depends on axioms: \[(propext|Classical\.choice|Quot\.sound)(, (propext|Classical\.choice|Quot\.sound))*\]$"; then
+            echo "::error::unexpected axiom or malformed report line detected"; exit 1
           fi
 
   python:
@@ -64,3 +90,8 @@ jobs:
 
       - name: F^4 exact certificate
         run: python tower4_certificate.py
+
+      # The n3 >= 11 certificate is the largest quoted input of the F^4
+      # chain; exercise it too (sampling zeroed, exact part only).
+      - name: F^3 exact certificate (n3 >= 11)
+        run: python keller_quantization.py tower --exact3 --wide 0 --n3 0
