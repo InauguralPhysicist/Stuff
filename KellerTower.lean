@@ -28,7 +28,7 @@
 import KellerComp
 
 namespace KellerTower
-open KellerCerts KellerBridge KellerComp
+open KellerCerts KellerBridge KellerExist KellerComp
 
 /-! ### y* = F(z*) -/
 
