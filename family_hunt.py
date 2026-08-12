@@ -29,7 +29,14 @@ with the chart x = C/(B*C - p(w)), u = w*x/C, y = (u-1)/x,
 z = (gamma-1-a*(u-1))/x^2 lifting each root off the escape locus
 {B*C = p(w)}. Since C != 0 forces x != 0 at every preimage,
 n1 = count_roots(E) EXACTLY off the guarded (measure-zero) strata.
-No Groebner per point. Structural fact (verified at import): the guard
+No Groebner per point. THREE identities are verified symbolically at
+import, and together they close the bijection: the forward identity
+E(u*gamma) == 0 and the chart identity x*(B*C - p(W)) == C give
+preimage -> root plus uniqueness of the lift (an upper bound only);
+the REVERSE-LIFT identity F(chart(w)) == target modulo E(w) gives
+root -> preimage. n1_exact consumes the verified E object itself, so
+the checks cover the code path that produces the published counts.
+Structural fact (also verified at import): the guard
 polynomial B*C - p(w) is exactly E'(w), so the gcd(E, guard) check is
 precisely a squarefreeness test on E -- every surviving target has a
 squarefree quartic E with constant leading coefficient, hence
@@ -84,6 +91,7 @@ import sympy as sp
 from sympy import Rational as Q
 
 x, y, z, w = sp.symbols('x y z w')
+TA, TB, TC = sp.symbols('TA TB TC')     # symbolic target components
 
 
 def build_member(roots):
@@ -144,14 +152,41 @@ def member_kit(roots):
     chart_id = sp.expand(x*(F2*F3 - p.subs(w, W)) - F3)
     if inv_id != 0 or chart_id != 0:
         raise ValueError("fiber-determination identities failed")
+    # E and the guard as verified template objects over QQ(TA,TB,TC).
+    # n1_exact consumes THESE, not a textual re-derivation, so the
+    # checks below cover the exact code path that produces published
+    # counts (a planted sign fault in a re-derived E would pass every
+    # other gate in this file while silently changing the counts).
+    Et = sp.expand(-H + w*(Hp0 + TB*TC) - TA*TC**2)
+    guardt = sp.expand(TB*TC - p)
     # guard == E' (so the gcd(E, guard) check in n1_exact is exactly a
     # squarefreeness test on E, and n1 in {0, 2, 4} off the wall is a
     # parity theorem): dE/dw = -H' + H'(0) + B*C = B*C - p.
-    TA, TB, TC = sp.symbols('_TA _TB _TC')
-    Et = -H + w*(Hp0 + TB*TC) - TA*TC**2
-    if sp.expand(sp.diff(Et, w) - (TB*TC - p)) != 0:
+    if sp.expand(sp.diff(Et, w) - guardt) != 0:
         raise ValueError("guard != E' -- squarefreeness guard broken")
-    return dict(M, Hp0=Hp0, p=p)
+    # Reverse-lift identity (root -> preimage): the chart lift of ANY
+    # off-guard root of E maps exactly back to the target. inv_id and
+    # chart_id alone prove only preimage -> root plus uniqueness of the
+    # lift (an upper bound); THIS direction is what makes count_roots(E)
+    # the exact fiber count. Each component must satisfy
+    # F_i(chart(w)) - T_i == 0 modulo E(w), with a denominator that
+    # cannot vanish off the guard locus (powers of TC only).
+    xc = TC/guardt
+    uc = w*xc/TC
+    yc = sp.cancel((uc - 1)/xc)
+    zc = sp.cancel((TC/xc - 1 - a*(uc - 1))/xc**2)
+    lift = {x: xc, y: yc, z: zc}
+    EtP = sp.Poly(Et, w)
+    for Fi, Ti in ((F1, TA), (F2, TB), (F3, TC)):
+        num, den = sp.fraction(sp.cancel(sp.together(Fi.subs(lift) - Ti)))
+        rem = sp.rem(sp.Poly(sp.expand(num), w), EtP, w)
+        if sp.simplify(rem.as_expr() if hasattr(rem, 'as_expr') else rem) != 0:
+            raise ValueError("reverse-lift identity failed at component %s"
+                             % Ti)
+        if w in den.free_symbols:
+            raise ValueError("reverse-lift denominator depends on w: %s"
+                             % den)
+    return dict(M, Hp0=Hp0, p=p, Et=Et, guardt=guardt)
 
 
 def _real_sols_shape(eqs, v1, v2):
@@ -259,8 +294,9 @@ def n1_exact(M, target):
     Av, Bv, Cv = target
     if Cv == 0:
         return None
-    E = sp.Poly(-M['H'] + w*(M['Hp0'] + Bv*Cv) - Av*Cv**2, w)
-    guard = sp.Poly(Bv*Cv - M['p'], w)
+    s = {TA: Av, TB: Bv, TC: Cv}
+    E = sp.Poly(M['Et'].subs(s), w)
+    guard = sp.Poly(M['guardt'].subs(s), w)
     if sp.gcd(E, guard).total_degree() > 0:
         return None
     return sp.count_roots(E)
