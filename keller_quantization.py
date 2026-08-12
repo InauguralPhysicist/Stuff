@@ -34,6 +34,7 @@ monodromy computation; residual thresholds at large |x| are conditioning-aware
 (F evaluates with absolute error ~1e-16*|x|^7 in float64).
 """
 import argparse
+import sys
 import time
 
 import numpy as np
@@ -1042,7 +1043,9 @@ def cmd_tower(args):
     print(f"n3 realized values (wide sampling, {args.n3} tries):", sorted(hist3))
     print(f"  histogram: {dict(sorted(hist3.items()))}")
     if args.exact3:
-        _exact3()
+        if not _exact3():
+            print(f"[{time.time()-t0:.0f}s]")
+            sys.exit(1)
     print(f"[{time.time()-t0:.0f}s]")
 
 
@@ -1056,13 +1059,16 @@ def _exact3():
     Ly = (27*yst[0]**2*yst[2]**2 - 18*yst[0]*yst[1]*yst[2] + 16*yst[0]
           + yst[1]**3*yst[2] - yst[1]**2)
     Ky = 27*yst[0]*yst[2]**2 - 9*yst[1]*yst[2] + 8
+    ok = Ly < 0 and Ky != 0
     print(f"exact3: y* = F(z*) rational; L(y*) < 0: {Ly < 0}; K(y*) != 0: {Ky != 0}")
     z1s = sp.symbols('z1u')
     cub = sp.Poly(Ly*z1s**3 + (4 - 3*yst[1]*yst[2])*z1s - 2*yst[2], z1s)
-    assert cub.eval(zst[0]) == 0, "z*_1 must be an exact root"
+    if cub.eval(zst[0]) != 0:
+        raise ValueError("z*_1 must be an exact root of the fiber cubic at y*")
     Q, rem = sp.div(cub.as_expr(), z1s - zst[0], z1s)
     Q = sp.Poly(sp.expand(Q), z1s)
     disc = sp.discriminant(Q.as_expr(), z1s)
+    ok &= disc > 0
     print(f"exact3: residual quadratic has disc > 0 (two real conjugates): {disc > 0}")
     # conjugate preimages z'(u) via the chart, u a root of Q; certify L,K,B != 0
     # and no F-preimage of z'(u) on the empty-fiber curve
@@ -1078,6 +1084,7 @@ def _exact3():
         val = sp.together(poly.subs({y1: zp[0], y2: zp[1], y3: zp[2]}))
         numv = sp.Poly(sp.expand(sp.numer(val)), z1s)
         gq = sp.gcd(numv, Q)
+        ok &= gq.degree() == 0
         print(f"exact3: gcd(num({name} at z'(u)), Q) = {gq.as_expr()} "
               f"(trivial: {gq.degree() == 0})")
     # Groebner unit-ideal test: no preimage w of z'(u) lies on the curve
@@ -1088,9 +1095,10 @@ def _exact3():
     gens += [Q.as_expr().subs(z1s, u), 3*w2*w3 - 4]
     GB = sp.groebner(gens, w1, w2, w3, u, order='grevlex')
     unit = list(GB.exprs) == [1]
+    ok &= unit
     print(f"exact3: 1 in <Q(u), F(w)-z'(u), 3w2w3-4>: {unit}")
     print(f"exact3: CONCLUSION n3(y*) = 9 + n2(z') + n2(z'') >= 11 on an open "
-          f"neighborhood: {'CERTIFIED' if unit and disc > 0 and Ly < 0 else 'FAILED'}"
+          f"neighborhood: {'CERTIFIED' if ok else 'FAILED'}"
           f"  [{time.time()-t0:.0f}s]")
     # IV.2 remark (i), global version (round-5 review): F is injective on the
     # curve, so c(s) is the ONLY on-curve preimage of F(c(s)) for every s --
@@ -1100,9 +1108,11 @@ def _exact3():
     gens2 = [sp.expand(sp.numer(sp.together(f.subs(csub(uq)) - f.subs(csub(sq)))))
              for f in Fs] + [(uq - sq)*vq - 1, sq*uq*rq - 1]
     GBi = sp.groebner(gens2, uq, sq, vq, rq, order='grevlex')
-    print("exact3: F injective on the curve (unit ideal):",
-          list(GBi.exprs) == [1],
+    inj = list(GBi.exprs) == [1]
+    ok &= inj
+    print("exact3: F injective on the curve (unit ideal):", inj,
           "-> even n2 on the entire L<0 sub-arc of F(curve)")
+    return ok
 
 
 
