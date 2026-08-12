@@ -43,6 +43,7 @@ The full write-up is [`keller_quantization_report.md`](keller_quantization_repor
 | `KellerOpen.lean` | Openness layer — `tower_eleven_nhds`: the eleven preimages persist on a neighborhood of y\* (explicit inverse Jacobian, det DF ≡ −2, inverse function theorem) |
 | `AxiomCheck.lean` | `#print axioms` audit of every certificate |
 | `tower4_certificate.py` | Exact F⁴ certificate: n₄ ≥ 13 at Y = F(F(z\*)) |
+| `family_hunt.py` | The family hunt (Question 4, completeness half): two same-degree Gallagher members, exact n₁ off-wall and on it, numeric n₂ — see below |
 | `friedrichs_levels.html` | Figure: Friedrichs spectrum of the transformed oscillator (Part III) |
 | `source-note/` | The verified note and its companion scripts, archived with matching SHA-256 (see its README) |
 | `lakefile.toml`, `lean-toolchain` | Lake build config, pinned to Lean 4 / mathlib v4.32.0 |
@@ -101,6 +102,33 @@ The F⁴ extension is a standalone script (everything exact over ℚ or
 ```sh
 python tower4_certificate.py   # exact certificate n₄ ≥ 13
 ```
+
+## The family hunt (Question 4, completeness half — issue #14)
+
+Report §IV.5 reduces completeness to covering rigidity and asks for other
+family members. `family_hunt.py` builds two genuinely distinct degree-4
+members of the Gallagher weighted-lift family exactly (atlas roots
+[0, −1, 3, 4] and the alternative endpoint-identity solution
+[0, −1, −2, 3/2]) and measures the multiplicity invariant across the pair:
+
+```sh
+python family_hunt.py --samples 400 --phase2 400 --phase2-wide 86
+```
+
+Status of each claim (the analog of the trust ledger, for this track):
+
+| Claim | Status |
+|---|---|
+| n₁ = count_roots(E) exactly, off the wall (C ≠ 0) | Code-certified (not Lean): three identities verified symbolically at import — forward, chart-uniqueness, and reverse-lift — closing the root ↔ preimage bijection; `n1_exact` consumes the verified E object |
+| off-wall n₁ ∈ {0, 2, 4} | Theorem (parity): the guard polynomial is exactly E′, so every unguarded target has a squarefree quartic E with constant leading coefficient; both members attain all three values (N = 400 exact) |
+| wall (C = 0) fiber counts | Exact branch decomposition of F₃ = xγ = 0, substitution-verified; attained values {1, 3}, identical for both members at every audited wall target. (Phase 0's odd counts were these — initially misdiagnosed as eliminant artifacts, corrected by the 2026-08-12 adversarial review) |
+| n₂ value sets {0, 2, 4, 6, 8, 10, 12}, both members | Numeric (60-digit, relative-threshold discipline, ambiguity excluded, story-1 calibrated against the exact pipeline; 486 targets); 14 and 16 unattained by either member |
+| the pair is a genuine test case (not secretly equivalent) | Open: A ≠ B as polynomial maps is verified; equivalence up to the *tame* moves is unresolved — a tame equivalence would trivialize the invariant tie |
+
+Through n₂ the attained value sets do not separate the pair; the
+completeness question is live. Comparison is by attained value set (the
+essential range, up to the moves) — pointwise counts at a shared target
+differ freely between two different maps.
 
 ## The trust ledger
 
