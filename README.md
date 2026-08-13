@@ -45,6 +45,10 @@ The full write-up is [`keller_quantization_report.md`](keller_quantization_repor
 | `tower4_certificate.py` | Exact F⁴ certificate: n₄ ≥ 13 at Y = F(F(z\*)) |
 | `family_hunt.py` | The family hunt (Question 4, completeness half): two same-degree Gallagher members, exact n₁ off-wall and on it, numeric n₂ — see below |
 | `family_equiv.py` | Exact decision (both directions): the family-hunt pair is NOT affinely equivalent — the invariant tie is non-trivial against the whole affine group |
+| `FAMILY_GLUING.md` | Phase-3 pre-registration: the wall-gluing invariant hierarchy (G0–G3), frozen and adversarially reviewed before data |
+| `family_gluing_structure.py` | Machine-checked structural lemmas L1–L7 behind the gluing invariant (plane reduction, crack/jump dichotomy, no ovals, no phantom walls) |
+| `family_gluing_census.py` | The gated census pipeline: validation gates V1–V6a, then the G1/G2 measurement — found the G2 separation |
+| `family_gluing_verify.py` | Independent confirmation of the G2 separation by exact branch continuation (the anomaly-protocol recomputation) |
 | `friedrichs_levels.html` | Figure: Friedrichs spectrum of the transformed oscillator (Part III) |
 | `source-note/` | The verified note and its companion scripts, archived with matching SHA-256 (see its README) |
 | `lakefile.toml`, `lean-toolchain` | Lake build config, pinned to Lean 4 / mathlib v4.32.0 |
@@ -125,11 +129,15 @@ Status of each claim (the analog of the trust ledger, for this track):
 | wall (C = 0) fiber counts | Exact branch decomposition of F₃ = xγ = 0, substitution-verified; attained values {1, 3}, identical for both members at every audited wall target. (Phase 0's odd counts were these — initially misdiagnosed as eliminant artifacts, corrected by the 2026-08-12 adversarial review) |
 | n₂ value sets {0, 2, 4, 6, 8, 10, 12}, both members | Numeric (60-digit, relative-threshold discipline, ambiguity excluded, story-1 calibrated against the exact pipeline; 486 targets); 14 and 16 unattained by either member |
 | the pair is a genuine test case (not secretly equivalent) | Affine layer decided: A and B are NOT affinely equivalent, in either direction (`family_equiv.py`, CI-run: slot equations forced by strict degree separation, slot-1 family certified complete, slot-2 Gröbner basis {1} saturated at al ≠ 0). Non-affine *tame* equivalence remains open — the residual triviality risk for the invariant tie |
+| **the pair is SEPARATED by the multiplicity landscape (G2)** | Pre-registered wall-gluing program (`FAMILY_GLUING.md`, issue #19): value sets (G0) tie through n₂ and the component census (G1) ties exactly, but the labeled incidence graphs (G2) differ — the Σ-component whose closure meets the wall (intrinsically marked) ends at **{node, cusp}** for A and at **{cusp, cusp}** for B. Measured by the gated census pipeline (`family_gluing_census.py`, gates V1–V6a green incl. the moved-presentation negative control) and confirmed by independent branch continuation (`family_gluing_verify.py`); both CI-run. Scope: separates up to the proved move class — polynomial automorphisms on both sides, and in fact all homeomorphism pairs |
 
-Through n₂ the attained value sets do not separate the pair; the
-completeness question is live. Comparison is by attained value set (the
-essential range, up to the moves) — pointwise counts at a shared target
-differ freely between two different maps.
+Through n₂ the attained value sets do not separate the pair — but the
+multiplicity function **as a function up to moves** does (row above):
+the separation lives in the landscape's incidence topology, not in the
+value sets. Consequence for Question 4: this pair no longer tests
+completeness (their multiplicity functions are inequivalent); a
+completeness test now needs a landscape-matched pair, and the census
+pipeline is the screening instrument.
 
 ## The trust ledger
 
