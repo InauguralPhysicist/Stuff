@@ -103,6 +103,36 @@ jobs:
       - name: Wall-gluing structural lemmas (FAMILY_GLUING.md L1-L7)
         run: python family_gluing_structure.py
 
+  gluing:
+    name: Wall-gluing census (gates + G2 separation)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Gated census pipeline (V1-V6a, then G1/G2)
+        # exit 2 = confirmed G-difference (the banked separation);
+        # exit 0 would mean the separation vanished; both are signal,
+        # only gate failures (exit 1) or crashes may fail this step
+        run: |
+          set +e
+          python family_gluing_census.py
+          code=$?
+          if [ "$code" -eq 2 ]; then
+            echo "G2 separation reproduced (expected)"; exit 0
+          fi
+          echo "::error::census exit $code -- banked separation NOT reproduced"
+          exit 1
+
+      - name: Independent confirmation (anomaly-protocol recomputation)
+        run: python family_gluing_verify.py
+
       - name: CLI sanity
         run: python keller_quantization.py --help
 
