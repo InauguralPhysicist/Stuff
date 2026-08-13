@@ -169,11 +169,23 @@ def stage2(Msrc, Mtgt, sname, tname):
     return None
 
 
+def parse_roots(s):
+    """Parse 'r1,r2,r3' with rational entries into a root list."""
+    return [0] + [Q(sp.Rational(t)) for t in s.split(',')]
+
+
 def main():
-    MA = member_kit([0, -1, 3, 4])
-    MB = member_kit([0, -1, -2, Q(3, 2)])
-    print("--- affine-equivalence decision, degrees strictly separated ---",
-          flush=True)
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--pair', default='-1,3,4;-2,-1,3/2',
+                    help="two members as 'a,b,c;d,e,f' (nonzero roots; "
+                         "0 is implicit). Default: the original A, B.")
+    args = ap.parse_args()
+    ra, rb = args.pair.split(';')
+    MA = member_kit(parse_roots(ra))
+    MB = member_kit(parse_roots(rb))
+    print("--- affine-equivalence decision for {0,%s} vs {0,%s} ---"
+          % (ra, rb), flush=True)
     for name, M in (('A', MA), ('B', MB)):
         degs = [sp.total_degree(sp.expand(Fi), x, y, z) for Fi in M['F']]
         assert degs == [12, 11, 4], degs
