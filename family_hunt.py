@@ -313,14 +313,22 @@ RTOL_ACCEPT = mp.mpf('1e-40')
 RTOL_REJECT = mp.mpf('1e-20')
 
 
-def _mp_kit(M):
-    """Per-member mpf constants for phase 2 (cached on the kit)."""
-    if '_mp' not in M:
-        tompf = lambda q: mp.mpf(int(q.p)) / int(q.q)
-        M['_mp'] = dict(
-            cH=[tompf(c) for c in sp.Poly(M['H'], w).all_coeffs()],
-            cp=[tompf(c) for c in sp.Poly(M['p'], w).all_coeffs()],
-            Hp0=tompf(M['Hp0']), a=tompf(M['a']))
+def _mp_kit(M, dps=60):
+    """Per-member mpf constants for phase 2, built INSIDE an explicit
+    precision context and cached with their precision. (Building them
+    at ambient precision was a latent bug: a direct n2_numeric caller
+    in a fresh process got 15-digit constants under 60-digit
+    thresholds, flipping marginal targets; the published runs were
+    unaffected only because the calibration gate happened to build the
+    cache inside workdps(60) first.)"""
+    if M.get('_mp_dps', 0) < dps:
+        with mp.workdps(dps):
+            tompf = lambda q: mp.mpf(int(q.p)) / int(q.q)
+            M['_mp'] = dict(
+                cH=[tompf(c) for c in sp.Poly(M['H'], w).all_coeffs()],
+                cp=[tompf(c) for c in sp.Poly(M['p'], w).all_coeffs()],
+                Hp0=tompf(M['Hp0']), a=tompf(M['a']))
+            M['_mp_dps'] = dps
     return M['_mp']
 
 
@@ -368,7 +376,7 @@ def n2_numeric(M, target, dps=60):
     Av, Bv, Cv = target
     if Cv == 0:
         return None
-    K = _mp_kit(M)
+    K = _mp_kit(M, dps)
     with mp.workdps(dps):
         tompf = lambda q: mp.mpf(int(q.p)) / int(q.q)
         Av, Bv, Cv = tompf(Q(Av)), tompf(Q(Bv)), tompf(Q(Cv))
