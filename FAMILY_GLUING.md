@@ -236,6 +236,30 @@ carrying data beyond n as a function.
   data; nothing outside the G0–G3 shadows is compared. In particular
   the sign difference ρ_A = 5 vs ρ_B = −5/2 is NOT an invariant and
   must never be quoted as a separation.
+- **Erratum 2026-09-09 — continuation method.** The independent
+  confirmation `family_gluing_verify.py` previously continued branches
+  by nearest-root matching after exact isolation. That can change
+  branches silently. Witness: on (R − 64P)(R − 64P − 1) = 0, whose two
+  branches never meet, anchored at (P, R) = (0, 1), it returned R = 8
+  at P = 1/8 instead of 9. It stepped onto the other branch at its
+  *first accepted step*, where the wrong root sat at distance exactly 0
+  from the previous value while the correct one sat at distance 1 — and
+  the proximity guard read that zero as maximum confidence. Halving the
+  step cannot repair it: branch motion scales with the step, the
+  inter-branch gap does not. Replaced by order-preserving continuation:
+  on a P-interval carrying no critical value the real R-roots never
+  collide, so their sorted order is invariant and the k-th root is one
+  branch throughout; both the critical-value-free interval and the
+  unchanged root count are checked, not assumed. **The G2 separation was
+  re-derived under the corrected method and holds unchanged** (A:
+  {node, cusp}; B: regular crossing then {cusp, cusp}). The witness is
+  `selftest()` in that script, CI-run on every push.
+- The corrected script still matches by proximity in exactly one place:
+  the re-anchor just past a crossed critical line (member B, left leg),
+  where the real-root count genuinely changes and order transport does
+  not apply. That step rests on the O(h^(1/2)) ≈ 0.05 cluster-radius
+  against O(1) line-root-gap estimate — asserted in prose, not computed.
+  A certified enclosure there would close the last gap in this route.
 
 ## 8. Provenance
 
@@ -249,3 +273,11 @@ Outcome A caveat (iii) added (F4), intrinsic stratification added
 promoted to machine-checked status (F7), G2 route specified (F8),
 harness radical-comparison bug fixed (F9), V5/V6 gates added (F10).
 Measurement implementation and data follow in later PRs, gated by §5.
+
+Independent confirmation: `family_gluing_verify.py` (CI-run).
+Continuation method corrected 2026-09-09 after review flagged
+nearest-root branch matching as unsound: the defect was reproduced on a
+two-branch witness, the method was replaced by order transport, and the
+separation was re-derived unchanged (§7 erratum). The prior result is
+retained in git history rather than deleted; the witness that breaks the
+old method is now a permanent regression test.
